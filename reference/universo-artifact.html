@@ -1,0 +1,2677 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Universo Blutions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* One deliberate dark look: the brand's navy ground, full screen, for a TV left on in the office. */
+:root {
+  color-scheme: dark;
+  --ground-a: #14305c;
+  --ground-b: #081325;
+  --ground-c: #040a15;
+  --ink: #f4f7fb;
+  --ink-muted: #9aa8bd;
+  --ink-faint: #6f7f98;
+  --ice: #e9f3ff;
+  --sky: #48b4ff;
+  --blue: #1169f5;
+  --blue-text: #6fa8ff;
+  --orange: #ff8a4c;
+  --gas: #ff5a4a;
+  --ok: #3ddc97;
+  --fail: #ff4d5e;
+  --human: #ffc46b;
+  --agent: #48b4ff;
+  --glass: rgba(8, 19, 37, 0.72);
+  --glass-line: rgba(233, 243, 255, 0.12);
+  --glass-hover: rgba(233, 243, 255, 0.14);
+  --focus-ring: #48b4ff;
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-press: 120ms;
+  --dur-fast: 160ms;
+  --dur-base: 220ms;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  --gutter-t: max(16px, env(safe-area-inset-top, 0px));
+  --gutter-b: max(14px, env(safe-area-inset-bottom, 0px));
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--ground-c);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 6px; }
+
+.u {
+  position: fixed; inset: 0; overflow: hidden;
+  background:
+    radial-gradient(90% 70% at 70% -10%, var(--ground-a), transparent 62%),
+    linear-gradient(180deg, var(--ground-b), var(--ground-c));
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  cursor: grab;
+}
+.u:active { cursor: grabbing; }
+.u:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: 0; }
+.gl, .gl canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+
+/* Labels over the canvas */
+.lab { position: absolute; left: 0; top: 0; will-change: transform; transition: opacity var(--dur-base) ease; }
+.lab.off { opacity: 0; }
+.lab-gal {
+  display: flex; align-items: baseline; gap: 8px; white-space: nowrap; pointer-events: auto; text-decoration: none;
+  font-size: 11px; line-height: 1.3; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-text);
+  padding: 6px 4px; transform-origin: 50% 100%;
+}
+.lab-gal span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.lab-gal:hover { color: var(--sky); }
+.lab-map {
+  display: grid; gap: 2px; width: max-content; max-width: 184px; text-align: center; pointer-events: auto; text-decoration: none;
+  padding: 2px 6px; border-radius: 8px;
+  text-shadow: 0 0 6px var(--ground-c), 0 0 2px var(--ground-c), 0 0 1px var(--ground-c);
+}
+.lab-map b { font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.lab-map span { font-size: 11px; line-height: 1.3; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .lab-map:hover b { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; } }
+.lab-work {
+  font-size: 11px; line-height: 1.2; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap;
+  text-shadow: 0 0 4px var(--ground-c), 0 0 2px var(--ground-c);
+}
+.lab-work i { font-style: normal; font-weight: 500; color: var(--agent); }
+.lab-work.human i { color: var(--human); }
+
+.hl-arrow { position: absolute; left: 0; top: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; display: grid; place-items: center; pointer-events: none; color: var(--ice); opacity: 0; border-radius: 9999px; background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line), 0 0 12px rgba(72, 180, 255, 0.45); }
+.hl-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.hit { position: absolute; left: 0; top: 0; border-radius: 9999px; cursor: pointer; -webkit-user-drag: none; }
+.hit:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+
+/* Brand corner */
+.brand { position: absolute; top: var(--gutter-t); left: var(--gutter-l); display: grid; gap: 6px; pointer-events: none; transition: opacity var(--dur-base) ease; }
+.rule { width: 40px; height: 4px; border-radius: 9999px; background: var(--sky); }
+.eyebrow { margin: 4px 0 0; font-size: 11px; line-height: 1.3; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-text); }
+h1 { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+.status { pointer-events: auto; margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; line-height: 1.4; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; min-height: 17px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ground-c); background: var(--human); }
+.status .warn { color: var(--orange); }
+.fresh { display: inline-flex; align-items: center; gap: 7px; pointer-events: auto; cursor: default; }
+.dot { flex: none; width: 6px; height: 6px; border-radius: 9999px; background: var(--ink-faint); }
+.fresh.ok .dot { background: var(--ok); opacity: 0.7; }
+.fresh.stale .dot { background: var(--human); box-shadow: 0 0 8px var(--human); }
+.fresh.stale { color: var(--human); }
+
+/* Tools */
+.tools { position: absolute; top: var(--gutter-t); right: var(--gutter-r); display: flex; gap: 8px; }
+.tool {
+  width: 40px; height: 40px; display: grid; place-items: center; padding: 0;
+  color: var(--ice); background: rgba(233, 243, 255, 0.06); border: 0; border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--glass-line); cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) ease, opacity var(--dur-base) ease;
+}
+.tool svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.tool:active { transform: scale(0.97); }
+.tool[aria-expanded="true"], .tool[aria-pressed="true"] { background: var(--glass-hover); color: var(--sky); }
+.tool { position: relative; }
+.tool[aria-pressed="false"] { color: var(--ink-faint); }
+.tool[aria-pressed="true"]::after { content: ""; position: absolute; top: 7px; right: 7px; width: 5px; height: 5px; border-radius: 9999px; background: var(--sky); box-shadow: 0 0 6px var(--sky); }
+@media (max-width: 420px) { .tools { gap: 6px; } .tool { width: 36px; height: 36px; } }
+
+/* Buscador */
+.search {
+  position: absolute; top: calc(var(--gutter-t) + 52px); left: 50%; transform: translateX(-50%); width: min(440px, calc(100% - 32px));
+  display: grid; gap: 4px; padding: 6px; border-radius: 14px; cursor: default; z-index: 4;
+  background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.search[hidden] { display: none; }
+.search.in { animation: searchIn 180ms var(--ease-out) both; }
+@keyframes searchIn { from { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(0.98); } }
+.search-row { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+.search-row svg { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--ink-muted); stroke-width: 1.9; stroke-linecap: round; }
+.search input {
+  flex: 1; min-width: 0; height: 36px; font: inherit; font-size: 16px; font-weight: 500; color: var(--ink);
+  background: none; border: 0; outline: none; padding: 0;
+}
+.search input::placeholder { color: var(--ink-faint); }
+.search ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.search ul:empty { display: none; }
+.search li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 7px 10px; border-radius: 9px; font-size: 13px; line-height: 1.35; cursor: pointer; }
+.search li[aria-selected="true"] { background: var(--glass-hover); }
+.search li .ref { flex: none; color: var(--ink-muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+.search li .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.search li.none { cursor: default; color: var(--ink-muted); font-weight: 500; }
+@media (hover: hover) and (pointer: fine) { .tool:hover { background: var(--glass-hover); } }
+
+/* Bitácora: bottom left, quiet, fades with age */
+.log {
+  position: absolute; left: var(--gutter-l); bottom: var(--gutter-b); margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 4px; max-width: min(560px, calc(100% - 32px)); pointer-events: none;
+}
+.log li { display: flex; align-items: center; gap: 2px; min-width: 0; font-size: 13px; line-height: 1.45; font-weight: 500; color: var(--ink); transition: opacity 1200ms ease; }
+.log-go {
+  display: flex; align-items: center; gap: 8px; min-width: 0; pointer-events: auto; cursor: pointer; text-align: left;
+  font: inherit; color: inherit; background: none; border: 0; padding: 2px 6px; margin: 0 0 0 -6px; border-radius: 8px;
+  transition: background-color var(--dur-fast) ease;
+}
+.log-go .txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .log-go:hover { background: rgba(233, 243, 255, 0.06); } }
+.log-ext { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; color: var(--ink-faint); pointer-events: auto; transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease; }
+.log-ext svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) and (pointer: fine) { .log-ext:hover { color: var(--sky); background: rgba(233, 243, 255, 0.06); } }
+.log li.in { animation: logIn 420ms var(--ease-out) both; }
+.log .when { flex: none; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.log .pip { flex: none; width: 6px; height: 6px; border-radius: 9999px; background: var(--ice); box-shadow: 0 0 8px currentColor; color: var(--ice); }
+@keyframes logIn { from { opacity: 0; transform: translateY(6px); } }
+
+/* Legend: bottom right, desktop only */
+.legend {
+  position: absolute; right: var(--gutter-r); bottom: var(--gutter-b); margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 4px 14px; pointer-events: none;
+  font-size: 11px; line-height: 1.4; font-weight: 500; color: var(--ink-faint); transition: opacity var(--dur-base) ease;
+}
+.legend li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.g { flex: none; width: 9px; height: 9px; display: inline-block; border-radius: 9999px; }
+.g-sun { background: var(--ice); box-shadow: 0 0 0 2px var(--ground-b), 0 0 0 3.5px var(--sky), 0 0 10px var(--sky); transform: scale(0.8); }
+.g-todo { box-shadow: inset 0 0 0 1.5px var(--ink-muted); }
+.g-doing { background: var(--blue); box-shadow: 0 0 8px var(--sky); }
+.g-blocked { background: var(--orange); border-radius: 2px; transform: rotate(45deg) scale(0.82); }
+.g-review { box-shadow: inset 0 0 0 1.5px var(--blue-text); background: radial-gradient(circle, var(--blue-text) 0 2px, transparent 2.5px); }
+.g-gas { width: 14px; height: 9px; background: radial-gradient(closest-side, rgba(255, 90, 74, 0.55), transparent); }
+.g-sat { position: relative; box-shadow: inset 0 0 0 1.5px var(--ink-muted); }
+.g-sat::after { content: ""; position: absolute; right: -4px; top: -3px; width: 4px; height: 4px; border-radius: 9999px; background: var(--agent); box-shadow: 0 0 6px var(--agent); }
+@media (max-width: 1240px) { .legend { display: none; } }
+
+/* Modo demo */
+.demo {
+  position: absolute; right: var(--gutter-r); bottom: calc(var(--gutter-b) + 28px); width: min(340px, calc(100% - 32px));
+  display: grid; gap: 10px; padding: 14px; border-radius: 16px;
+  background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transform-origin: 100% 100%; cursor: default;
+}
+.demo[hidden] { display: none; }
+.demo.in { animation: demoIn 200ms var(--ease-out) both; }
+@keyframes demoIn { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+.demo-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.demo h2 { margin: 0; font-size: 11px; line-height: 1.3; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-text); }
+.kbd { font-size: 11px; font-weight: 600; color: var(--ink-muted); padding: 1px 6px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--glass-line); }
+.demo p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-muted); }
+.demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.demo-grid button {
+  display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left;
+  font: inherit; font-size: 13px; line-height: 1.3; font-weight: 500; color: var(--ink);
+  background: rgba(233, 243, 255, 0.05); border: 0; border-radius: 10px; padding: 8px 10px; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(233, 243, 255, 0.07);
+  transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) ease;
+}
+.demo-grid button:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .demo-grid button:hover { background: var(--glass-hover); } }
+.demo-grid .pip { flex: none; width: 6px; height: 6px; border-radius: 9999px; background: currentColor; box-shadow: 0 0 8px currentColor; }
+.demo-grid span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Tooltip */
+.tip {
+  position: absolute; left: 0; top: 0; z-index: 3; display: grid; gap: 4px; width: max-content; max-width: min(300px, calc(100% - 24px));
+  background: var(--glass); color: var(--ink); border-radius: 12px; padding: 10px 12px;
+  box-shadow: inset 0 0 0 1px var(--glass-line), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  pointer-events: none; opacity: 0; visibility: hidden;
+  transition: opacity 125ms var(--ease-out), visibility 0s linear 125ms;
+}
+.tip.on { opacity: 1; visibility: visible; transition: opacity 125ms var(--ease-out); }
+.tip.touch { pointer-events: auto; cursor: default; }
+.tip-ref { font-size: 12px; line-height: 1.4; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.tip-ref b { font-weight: 600; color: var(--ink); }
+.tip-title { font-size: 14px; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; }
+.tip-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; font-size: 12px; line-height: 1.4; font-weight: 500; color: var(--ink-muted); }
+.tip-foot .chip { display: inline-flex; align-items: center; gap: 6px; }
+.tip a { font-size: 12px; font-weight: 600; color: var(--sky); text-decoration: none; padding: 6px 0; margin: -6px 0; }
+
+/* Notice: no WebGL, or the connector needs something */
+.notice {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100% - 32px));
+  display: grid; gap: 12px; justify-items: start; padding: 24px; border-radius: 16px; cursor: default;
+  background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-line);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.notice[hidden] { display: none; }
+.notice h2 { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 600; letter-spacing: -0.01em; }
+.notice p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
+.btn {
+  font: inherit; font-size: 14px; line-height: 1.3; font-weight: 600; color: #ffffff; background: var(--blue);
+  border: 0; border-radius: 12px; padding: 10px 16px; cursor: pointer; transition: transform var(--dur-press) var(--ease-out);
+}
+.btn:active { transform: scale(0.97); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Clean mode: the CSS fallback for fullscreen hides the chrome and leaves the universe */
+.u.is-clean .brand, .u.is-clean .legend, .u.demo-open .legend { opacity: 0; }
+.u.is-clean .tools .tool:not(#tFs) { opacity: 0.25; }
+
+@media (max-width: 600px) {
+  h1 { font-size: 22px; }
+  .log li { font-size: 12px; }
+  .log li:nth-last-child(n+4) { display: none; }
+  .demo { left: var(--gutter-l); right: var(--gutter-r); width: auto; bottom: var(--gutter-b); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .log li.in, .demo.in, .search.in { animation: none; }
+  .tool:active, .btn:active, .demo-grid button:active { transform: none; }
+  .lab, .tip { transition: none; }
+}
+</style>
+
+<div class="u" id="u" tabindex="0" role="group" aria-label="Universo Blutions" aria-describedby="uDesc">
+  <div class="gl" id="gl" aria-hidden="true"></div>
+  <div class="labels" id="labels"></div>
+  <a class="hit" id="hit" target="_blank" rel="noopener" draggable="false" tabindex="-1" hidden></a>
+  <header class="brand">
+    <div class="rule" aria-hidden="true"></div>
+    <p class="eyebrow">Blutions</p>
+    <h1>Universo</h1>
+    <p class="status" id="status" aria-live="polite"></p>
+  </header>
+  <div class="tools">
+    <button class="tool" id="tSearch" type="button" aria-label="Buscar (tecla /)" title="Buscar (tecla /)" aria-expanded="false" aria-controls="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+    <button class="tool" id="tTour" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10.2 8.6v6.8l5.4-3.4z"/></svg></button>
+    <button class="tool" id="tDemo" type="button" aria-label="Modo demo (tecla D)" title="Modo demo (tecla D)" aria-expanded="false" aria-controls="demo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.2 2.2M15.5 15.5l2.2 2.2M17.7 6.3l-2.2 2.2M8.5 15.5l-2.2 2.2"/></svg></button>
+    <button class="tool" id="tFit" type="button" aria-label="Recentrar (tecla 0)" title="Recentrar (tecla 0)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+    <button class="tool" id="tFs" type="button"></button>
+  </div>
+  <ol class="log" id="log" aria-label="Bitácora" aria-live="polite"></ol>
+  <ul class="legend" aria-label="Leyenda">
+    <li><span class="g g-sun" aria-hidden="true"></span>Mapa</li>
+    <li><span class="g g-todo" aria-hidden="true"></span>Por hacer</li>
+    <li><span class="g g-doing" aria-hidden="true"></span>En curso</li>
+    <li><span class="g g-blocked" aria-hidden="true"></span>Bloqueado</li>
+    <li><span class="g g-review" aria-hidden="true"></span>En revisión</li>
+    <li><span class="g g-sat" aria-hidden="true"></span>Alguien trabaja</li>
+    <li><span class="g g-gas" aria-hidden="true"></span>Sin mapa</li>
+  </ul>
+  <div class="search" id="search" hidden role="dialog" aria-label="Buscar en el universo">
+    <div class="search-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="q" type="text" placeholder="#123, repo#123 o parte del título" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="qList" aria-autocomplete="list" aria-label="Buscar issue o mapa"></div>
+    <ul id="qList" role="listbox" aria-label="Resultados"></ul>
+  </div>
+  <section class="demo" id="demo" hidden aria-labelledby="demoTitle">
+    <div class="demo-head"><h2 id="demoTitle">Modo demo</h2><span class="kbd" aria-hidden="true">D</span></div>
+    <p id="demoNote"></p>
+    <div class="demo-grid" id="demoGrid"></div>
+  </section>
+  <div class="tip" id="tip" role="tooltip"></div>
+  <div class="notice" id="notice" role="alert" hidden></div>
+  <p class="sr-only" id="uDesc"></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.22.0/pixi.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-filters@6.1.5/dist/pixi-filters.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script>
+(() => {
+  "use strict";
+  /* ================= constants ================= */
+  const SERVER = "github";
+  const OWNER = "blutions";
+  const REPOS = ["agenticoffice", "torre-de-control", "website"];
+  const DEMO_REPOS = ["demo-alfa", "demo-beta", "demo-gamma"];
+  const POLL = 60 * 1000;
+  const WATCH_OPTS = { refetchInterval: POLL, cache: { staleTime: 0, gcTime: 24 * 60 * 60 * 1000 } };
+  const AUTHZ = new Set(["needs_reauth", "server_not_connected", "selection_required", "server_not_found", "blocked_by_policy", "approval_required", "not_in_manifest", "not_granted", "capability_disabled", "capability_removed", "consent_required"]);
+  const WORK_TTL = 30 * 60 * 1000;
+  const LOG_WINDOW = 2 * 60 * 60 * 1000;
+  const QUEUE_GAP = 1500;
+  const BRANCH_RE = /^(feat|fix|improvement|chore|docs|adr)\/(\d+)-/i;
+  const AGENT_RE = /co-authored-by:\s*claude|claude-session:/i;
+  const STATE_LABEL = { todo: "Por hacer", doing: "En curso", blocked: "Bloqueado", review: "En revisión", done: "Hecho" };
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const still = () => reduceMotion.matches;
+
+  const $u = document.getElementById("u");
+  const $gl = document.getElementById("gl");
+  const $labels = document.getElementById("labels");
+  const $hit = document.getElementById("hit");
+  const $status = document.getElementById("status");
+  const $log = document.getElementById("log");
+  const $demo = document.getElementById("demo");
+  const $demoGrid = document.getElementById("demoGrid");
+  const $demoNote = document.getElementById("demoNote");
+  const $tip = document.getElementById("tip");
+  const $notice = document.getElementById("notice");
+  const $desc = document.getElementById("uDesc");
+  const $tDemo = document.getElementById("tDemo");
+  const $tFit = document.getElementById("tFit");
+  const $tFs = document.getElementById("tFs");
+
+  let repos = REPOS.slice();
+  let mcp = null;
+  let demoMode = false;
+
+  /* ================= helpers (shared with Seguimiento) ================= */
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const keyOf = (repo, n) => repo + "#" + n;
+  const prKeyOf = (repo, n) => repo + "!" + n;
+  const issueUrl = (repo, n) => `https://github.com/${OWNER}/${repo}/issues/${n}`;
+  const prUrl = (repo, n) => `https://github.com/${OWNER}/${repo}/pull/${n}`;
+  const login = a => typeof a === "string" ? a : (a && a.login) || "";
+  const isMap = t => typeof t === "string" && t.startsWith("Mapa: ");
+  const time = s => { const t = Date.parse(s || ""); return isNaN(t) ? 0 : t; };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function parseRefs(text, fromRepo) {
+    const out = [];
+    const re = /(?:([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+))?#(\d+)/g;
+    let m;
+    while ((m = re.exec(text))) {
+      const owner = m[1], repo = m[2] ? m[2] : fromRepo;
+      if (m[1] && owner.toLowerCase() !== OWNER) continue;
+      if (!repos.includes(repo)) continue;
+      out.push({ repo, number: Number(m[3]) });
+    }
+    return out;
+  }
+  function blockedRefs(body, repo) {
+    const line = String(body || "").split(/\r?\n/).find(l => /^\s*[*_]*\s*blocked by\s*[*_]*\s*:/i.test(l));
+    if (!line) return [];
+    return parseRefs(line.replace(/^[^:]*:/, ""), repo);
+  }
+  function closingRefs(body, prRepo) {
+    const out = [];
+    const re = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b\s*:?\s+((?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)?#\d+)/gi;
+    let m;
+    while ((m = re.exec(String(body || "")))) out.push(...parseRefs(m[1], prRepo));
+    return out;
+  }
+  function parseHtmlUrl(u) {
+    const m = /github\.com\/(?:repos\/)?([^/]+)\/([^/]+)\/issues\/(\d+)/i.exec(u || "");
+    if (!m || m[1].toLowerCase() !== OWNER || !repos.includes(m[2])) return null;
+    return { repo: m[2], number: Number(m[3]) };
+  }
+  function asObj(p) {
+    if (typeof p === "string") { try { return JSON.parse(p); } catch (e) { return null; } }
+    return p;
+  }
+  function subList(p) {
+    p = asObj(p);
+    if (Array.isArray(p)) return p;
+    if (!p || typeof p !== "object") return [];
+    for (const k of ["sub_issues", "subIssues", "items", "issues", "nodes"]) {
+      const v = asObj(p[k]);
+      if (Array.isArray(v)) return v;
+      if (v && Array.isArray(v.nodes)) return v.nodes;
+    }
+    return [];
+  }
+  function listOf(p, keys) {
+    p = asObj(p);
+    if (Array.isArray(p)) return p;
+    if (!p || typeof p !== "object") return [];
+    for (const k of keys) { const v = asObj(p[k]); if (Array.isArray(v)) return v; }
+    return [];
+  }
+  // Label names, whatever the shape: ["a"], [{name:"a"}] or {nodes:[{name:"a"}]}.
+  function labelNames(l) {
+    l = asObj(l);
+    const arr = Array.isArray(l) ? l : (l && Array.isArray(l.nodes) ? l.nodes : []);
+    return arr.map(x => typeof x === "string" ? x : (x && x.name) || "").filter(Boolean).map(x => x.toLowerCase());
+  }
+  const WORK_LABEL = "en-curso";
+  function whereOf(s, map) {
+    for (const u of [s.html_url, s.url]) { const w = parseHtmlUrl(u); if (w) return w; }
+    const full = (s.repository && (s.repository.full_name || s.repository.nameWithOwner)) || s.repository_full_name || "";
+    const fm = /^([^/]+)\/([^/]+)$/.exec(typeof s.repository === "string" ? s.repository : full);
+    if (fm) return (fm[1].toLowerCase() === OWNER && repos.includes(fm[2])) ? { repo: fm[2], number: Number(s.number) } : null;
+    const ru = /repos\/([^/]+)\/([^/]+)$/.exec(s.repository_url || "");
+    if (ru) return (ru[1].toLowerCase() === OWNER && repos.includes(ru[2])) ? { repo: ru[2], number: Number(s.number) } : null;
+    return s.number ? { repo: map.repo, number: Number(s.number) } : null;
+  }
+  function ago(ms) {
+    const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 60) return "ahora";
+    const m = Math.round(s / 60);
+    if (m < 60) return `${m} min`;
+    const h = Math.round(m / 60);
+    return h < 24 ? `${h} h` : `${Math.round(h / 24)} d`;
+  }
+
+  /* ================= snapshot =================
+     One normalized picture of the work, the same shape live and in the demo:
+     issues: key -> { key, repo, number, title, url, state, map, blockers, created, closedAt }
+     maps:   key -> { key, repo, number, title, url, created, failed }
+     prs:    key -> { key, repo, number, title, url, closes: [issueKey], head, created }
+     work:   issueKey -> { kind: "agent" | "human", at, branch, baseline }
+     claude: repo -> at (latest commit on a claude/... branch) */
+  const emptySnap = () => ({ at: 0, issues: new Map(), maps: new Map(), prs: new Map(), work: new Map(), claude: new Map() });
+  function cloneSnap(s) {
+    return {
+      at: s.at,
+      issues: new Map([...s.issues].map(([k, v]) => [k, { ...v, blockers: v.blockers.slice() }])),
+      maps: new Map([...s.maps].map(([k, v]) => [k, { ...v }])),
+      prs: new Map([...s.prs].map(([k, v]) => [k, { ...v, closes: v.closes.slice() }])),
+      work: new Map([...s.work].map(([k, v]) => [k, { ...v }])),
+      claude: new Map(s.claude),
+    };
+  }
+  // Hecho > En revisión > Bloqueado > En curso > Por hacer (docs/agents/issue-tracker.md, Seguimiento).
+  function stateOf(closed, hasPr, blockers, openKeys, assignees) {
+    if (closed) return "done";
+    if (hasPr) return "review";
+    if (blockers.some(k => openKeys.has(k))) return "blocked";
+    if (assignees.length) return "doing";
+    return "todo";
+  }
+  function restate(snap) {
+    const openKeys = new Set([...snap.issues.values()].filter(i => i.state !== "done").map(i => i.key));
+    const withPr = new Set([...snap.prs.values()].flatMap(p => p.closes));
+    for (const i of snap.issues.values()) {
+      if (i.state === "done") continue;
+      i.state = stateOf(false, withPr.has(i.key), i.blockers, openKeys, i.assignees || []);
+    }
+  }
+
+  /* ================= live data (watchTool, like Seguimiento) ================= */
+  const watches = new Map();
+  let pageError = null;
+  let repoErrors = [];
+  const agentOff = new Set(); // repos whose branches the connector cannot read
+  const branchState = new Map(); // "repo:branch" -> { sha, at, kind, issue, claude }
+  const branchRound = new Map(); // repo -> deliveries seen
+  let commitChain = Promise.resolve();
+
+  function ensure(key, tool, input) {
+    if (watches.has(key)) return;
+    const w = { tool, input, data: undefined, error: null, got: false, retried: false, storedAt: 0, unsub: null };
+    watches.set(key, w);
+    subscribe(key, w);
+  }
+  function subscribe(key, w) {
+    w.unsub = mcp.watchTool(SERVER, w.tool, w.input, ev => onWatch(key, w, ev), WATCH_OPTS);
+  }
+  function drop(key) {
+    const w = watches.get(key);
+    if (!w) return;
+    try { w.unsub && w.unsub(); } catch (e) {}
+    watches.delete(key);
+  }
+  function onWatch(key, w, ev) {
+    if (watches.get(key) !== w) return;
+    const isBranch = key.startsWith("br:");
+    if (ev.type === "data") {
+      const r = ev.result || {};
+      w.data = r.payload;
+      w.storedAt = (r.cache && r.cache.storedAt) || Date.now();
+      w.got = true; w.error = null; w.retried = false;
+      if (pageError && !isBranch) { pageError = null; hideNotice(); }
+      if (isBranch) { onBranches(key.slice(3), w.data); return; }
+    } else {
+      const e = ev.error || { code: "upstream_error", message: "" };
+      if (isBranch) {
+        // Branches are optional: without them only the "someone is working" signal goes dark.
+        if (e.code === "tool_error" || AUTHZ.has(e.code)) { agentOff.add(key.slice(3)); drop(key); renderStatus(); return; }
+        w.got = true; w.error = e; return;
+      }
+      if (AUTHZ.has(e.code)) {
+        pageError = e;
+        renderError();
+        return;
+      } else if (e.retryable && !w.retried) {
+        w.retried = true;
+        const wait = Math.max(e.retryAfterMs || 0, 800 + Math.random() * 1600);
+        setTimeout(() => {
+          if (watches.get(key) !== w) return;
+          try { w.unsub && w.unsub(); } catch (x) {}
+          subscribe(key, w);
+        }, wait);
+        return;
+      } else {
+        w.error = e; w.got = true;
+      }
+    }
+    scheduleLive();
+  }
+
+  let liveTimer = 0;
+  function scheduleLive() {
+    // A refresh round lands as several deliveries; wait for the round to settle before diffing.
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(reconcileLive, 1800);
+  }
+  let liveSnapAt = 0;
+
+  function reconcileLive() {
+    if (pageError || !mcp) return;
+    const reachable = new Set();
+    const openIssues = [];
+    repoErrors = [];
+    for (const repo of repos) {
+      let after = "";
+      const seen = new Set();
+      while (true) {
+        const key = `issues:${repo}:${after}`;
+        if (seen.has(key)) break;
+        seen.add(key);
+        reachable.add(key);
+        const input = { owner: OWNER, repo, state: "OPEN", fields: ["number", "title", "body", "state", "assignees", "labels", "created_at", "updated_at"], perPage: 100 };
+        if (after) input.after = after;
+        ensure(key, "list_issues", input);
+        const w = watches.get(key);
+        if (w.error) repoErrors.push(repo);
+        const p = asObj(w.data);
+        if (!p || typeof p !== "object") break;
+        for (const it of listOf(p, ["issues", "items", "nodes"])) {
+          openIssues.push({ repo, number: Number(it.number), title: it.title || "", body: it.body || "", assignees: (it.assignees || []).map(login).filter(Boolean), created: time(it.created_at || it.createdAt), updated: time(it.updated_at || it.updatedAt), labels: labelNames(it.labels) });
+        }
+        const pi = p.pageInfo || {};
+        if (pi.hasNextPage && pi.endCursor) after = pi.endCursor; else break;
+      }
+      const pk = `prs:${repo}`;
+      reachable.add(pk);
+      ensure(pk, "list_pull_requests", { owner: OWNER, repo, state: "open", fields: ["number", "title", "body", "draft", "html_url", "created_at", "head"], perPage: 100 });
+      if (watches.get(pk).error) repoErrors.push(repo);
+      if (!agentOff.has(repo)) {
+        const bk = `br:${repo}`;
+        reachable.add(bk);
+        ensure(bk, "list_branches", { owner: OWNER, repo, perPage: 100 });
+      }
+    }
+    const maps = openIssues.filter(i => isMap(i.title));
+    for (const m of maps) {
+      const k = `subs:${m.repo}#${m.number}`;
+      reachable.add(k);
+      ensure(k, "issue_read", { method: "get_sub_issues", owner: OWNER, repo: m.repo, issue_number: m.number, perPage: 100 });
+    }
+    for (const k of [...watches.keys()]) if (!reachable.has(k)) drop(k);
+
+    // Branch watches never hold the picture back.
+    const ready = [...watches.entries()].every(([k, w]) => w.got || k.startsWith("br:"));
+    renderStatus();
+    if (!ready) return;
+    const allFailed = [...watches.entries()].filter(([k]) => !k.startsWith("br:")).every(([, w]) => w.data === undefined);
+    if (allFailed) { showNotice("No pude leer GitHub.", "GitHub no respondió. Vuelvo a intentarlo en la próxima actualización.", ""); return; }
+    const snap = buildLiveSnap(openIssues, maps);
+    liveSnapAt = Math.min(...[...watches.entries()].filter(([k, w]) => !k.startsWith("br:") && !k.startsWith("subs:") && w.data !== undefined).map(([, w]) => w.storedAt));
+    ingest(snap, { real: true });
+    renderStatus();
+  }
+
+  function buildLiveSnap(openIssues, maps) {
+    const snap = emptySnap();
+    snap.at = Date.now();
+    for (const repo of repos) {
+      const p = watches.get(`prs:${repo}`)?.data;
+      for (const pr of listOf(p, ["pull_requests", "pullRequests", "items"])) {
+        const closes = [...new Set(closingRefs(pr.body, repo).map(r => keyOf(r.repo, r.number)))];
+        const head = (pr.head && (pr.head.ref || pr.head.label)) || pr.head_ref || pr.headRefName || "";
+        snap.prs.set(prKeyOf(repo, pr.number), { key: prKeyOf(repo, pr.number), repo, number: Number(pr.number), title: pr.title || "", url: pr.html_url || prUrl(repo, pr.number), closes, head: String(head).replace(/^[^:]*:/, ""), created: time(pr.created_at) });
+      }
+    }
+    const openKeys = new Set(openIssues.map(i => keyOf(i.repo, i.number)));
+    const withPr = new Set([...snap.prs.values()].flatMap(p => p.closes));
+    const make = (i, closed, closedAt) => {
+      const key = keyOf(i.repo, i.number);
+      const blockers = blockedRefs(i.body, i.repo).map(r => keyOf(r.repo, r.number));
+      return { key, repo: i.repo, number: i.number, title: i.title, url: i.url || issueUrl(i.repo, i.number), assignees: i.assignees, labels: i.labels || [], updated: i.updated || 0, blockers, map: null, created: i.created || 0, closedAt: closedAt || 0, state: stateOf(closed, withPr.has(key), blockers, openKeys, i.assignees) };
+    };
+    for (const i of openIssues) {
+      if (isMap(i.title)) {
+        const key = keyOf(i.repo, i.number);
+        snap.maps.set(key, { key, repo: i.repo, number: i.number, title: i.title.slice(6).trim(), url: issueUrl(i.repo, i.number), created: i.created, failed: !!watches.get(`subs:${key}`)?.error });
+      } else snap.issues.set(keyOf(i.repo, i.number), make(i, false));
+    }
+    const sorted = [...maps].sort((a, b) => repos.indexOf(a.repo) - repos.indexOf(b.repo) || a.number - b.number);
+    for (const m of sorted) {
+      const mk = keyOf(m.repo, m.number);
+      for (const s of subList(watches.get(`subs:${mk}`)?.data)) {
+        if (isMap(s.title)) continue;
+        const where = whereOf(s, m);
+        if (!where) continue;
+        const k = keyOf(where.repo, where.number);
+        const closed = String(s.state || "").toLowerCase() === "closed";
+        let t = snap.issues.get(k);
+        if (!t) {
+          t = make({ repo: where.repo, number: where.number, title: s.title || "", body: s.body || "", assignees: (s.assignees || []).map(login).filter(Boolean), url: s.html_url, created: time(s.created_at), updated: time(s.updated_at), labels: labelNames(s.labels) }, closed, time(s.closed_at));
+          snap.issues.set(k, t);
+        }
+        if (!t.map) t.map = mk;
+      }
+    }
+    // Someone working: a recent commit on <tipo>/<N>-slug, until its PR opens.
+    const now = Date.now();
+    const prHeads = new Set([...snap.prs.values()].map(p => p.repo + ":" + p.head));
+    for (const [bk, b] of branchState) {
+      if (!b.at || now - b.at > WORK_TTL) continue;
+      if (b.claude) { if (!(snap.claude.get(b.repo) >= b.at)) snap.claude.set(b.repo, b.at); continue; }
+      if (!b.issue || prHeads.has(bk)) continue;
+      const i = snap.issues.get(b.issue);
+      if (!i || i.state === "done") continue;
+      const prev = snap.work.get(b.issue);
+      if (!prev || prev.at < b.at) snap.work.set(b.issue, { kind: b.kind, at: b.at, branch: b.name, baseline: b.baseline });
+    }
+    // An agent at work: the `en-curso` label on an OPEN issue (set by a Claude Code hook). It wins over the branch signal
+    // and lasts while the label is there; branches stay as a bonus (today they 403 and switch themselves off).
+    for (const i of snap.issues.values()) {
+      if (i.state === "done" || !(i.labels || []).includes(WORK_LABEL)) continue;
+      const prev = snap.work.get(i.key);
+      snap.work.set(i.key, { kind: "agent", at: (prev && prev.at) || i.updated || now, label: true });
+    }
+    return snap;
+  }
+
+  function onBranches(repo, data) {
+    const round = (branchRound.get(repo) || 0) + 1;
+    branchRound.set(repo, round);
+    const list = listOf(data, ["branches", "items"]);
+    const names = new Set();
+    let budget = round === 1 ? 12 : 30;
+    const openIssue = n => latest.issues.get(keyOf(repo, n));
+    for (const br of list) {
+      const name = String(br.name || br.ref || "");
+      const sha = (br.commit && br.commit.sha) || br.sha || "";
+      if (!name) continue;
+      const m = BRANCH_RE.exec(name);
+      const isClaude = /^claude\//i.test(name);
+      if (!m && !isClaude) continue;
+      const bk = repo + ":" + name;
+      names.add(bk);
+      const prev = branchState.get(bk);
+      if (prev && prev.sha === sha) continue;
+      const issue = m ? keyOf(repo, Number(m[2])) : null;
+      const st = { repo, name, sha, at: prev ? prev.at : 0, kind: prev ? prev.kind : "human", issue, claude: isClaude, baseline: round === 1 };
+      branchState.set(bk, st);
+      // Only branches whose issue is open (or claude/...) are worth a commits call.
+      if (m) { const i = openIssue(Number(m[2])); if (!i || i.state === "done") continue; }
+      if (budget-- <= 0) continue;
+      commitChain = commitChain.then(() => fetchCommits(st)).catch(() => {});
+    }
+    for (const bk of [...branchState.keys()]) if (bk.startsWith(repo + ":") && !names.has(bk)) branchState.delete(bk);
+    commitChain = commitChain.then(() => scheduleLive());
+  }
+  async function fetchCommits(st) {
+    if (agentOff.has(st.repo)) return;
+    try {
+      const r = await mcp.callTool(SERVER, "list_commits", { owner: OWNER, repo: st.repo, sha: st.name, since: new Date(Date.now() - WORK_TTL).toISOString(), perPage: 3, fields: ["sha", "html_url", "commit", "author", "committer"] }, { cache: false });
+      const list = listOf(r && r.payload, ["commits", "items"]);
+      let best = null, bestAt = 0;
+      for (const c of list) {
+        const cm = c.commit || {};
+        const at = time((cm.committer && cm.committer.date) || (cm.author && cm.author.date) || c.date);
+        if (at > bestAt) { bestAt = at; best = c; }
+      }
+      if (best) {
+        st.at = bestAt;
+        st.kind = AGENT_RE.test(String((best.commit && best.commit.message) || best.message || "")) ? "agent" : "human";
+      }
+    } catch (e) {
+      if (e && (e.code === "tool_error" || AUTHZ.has(e.code))) { agentOff.add(st.repo); drop("br:" + st.repo); renderStatus(); }
+    }
+  }
+
+  // Merged or just closed? Asked only when an open PR vanishes, and once at start for the log.
+  async function closedPrs(repo) {
+    if (!mcp || demoMode) return [];
+    try {
+      const r = await mcp.callTool(SERVER, "list_pull_requests", { owner: OWNER, repo, state: "closed", sort: "updated", direction: "desc", perPage: 20, fields: ["number", "title", "body", "merged", "merged_at", "closed_at", "html_url"] }, { cache: false });
+      return listOf(r && r.payload, ["pull_requests", "pullRequests", "items"]);
+    } catch (e) { return null; }
+  }
+
+  /* ================= demo universe ================= */
+  // Invented repos and titles. Never real GitHub data.
+  const demoClosed = new Map(); // prKey -> { merged, at, closes, number, repo, title }
+  const demoNext = new Map();
+  function makeDemo() {
+    const now = Date.now(), min = 60 * 1000;
+    const s = emptySnap();
+    s.at = now;
+    const [A, B, G] = DEMO_REPOS;
+    const map = (repo, n, title, ageMin) => s.maps.set(keyOf(repo, n), { key: keyOf(repo, n), repo, number: n, title: "Ejemplo: " + title, url: issueUrl(repo, n), created: now - ageMin * min, failed: false });
+    const iss = (repo, n, title, o = {}) => {
+      const k = keyOf(repo, n);
+      s.issues.set(k, { key: k, repo, number: n, title: "Ejemplo: " + title, url: issueUrl(repo, n), assignees: o.who ? ["demo"] : [], blockers: (o.by || []).map(x => typeof x === "number" ? keyOf(repo, x) : x), map: o.map ? keyOf(o.mapRepo || repo, o.map) : null, created: now - (o.age || 600) * min, closedAt: o.closed ? now - o.closed * min : 0, state: o.closed ? "done" : "todo" });
+    };
+    map(A, 1, "Oficina con voz", 2000);
+    iss(A, 2, "Grabar audio en el chat", { map: 1, closed: 900 });
+    iss(A, 3, "Transcribir notas de voz", { map: 1, closed: 35 });
+    iss(A, 4, "Elegir proveedor de voz", { map: 1, who: 1 });
+    iss(A, 5, "Botón de micrófono", { map: 1 });
+    iss(A, 6, "Respuestas habladas", { map: 1, by: [4] });
+    iss(A, 7, "Ajustes de voz por Agente", { map: 1, by: [6] });
+    iss(A, 8, "Atajos de teclado para dictar", { map: 1 });
+    iss(G, 9, "Página que explica la voz", { map: 1, mapRepo: A });
+    map(A, 10, "Panel de costos", 3000);
+    iss(A, 11, "Medir tokens por Agente", { map: 10, who: 1 });
+    iss(A, 12, "Gráfico mensual", { map: 10, by: [11] });
+    iss(A, 13, "Aviso de presupuesto", { map: 10, by: [11] });
+    iss(A, 14, "Exportar a planilla", { map: 10, closed: 2000 });
+    iss(A, 15, "Ordenar la barra lateral");
+    iss(A, 16, "Ícono nuevo para Borradores", { who: 1 });
+    iss(A, 17, "Texto del estado vacío");
+    iss(A, 18, "Revisar contraste del modo oscuro", { age: 25 });
+    map(B, 1, "Alertas por correo", 4000);
+    iss(B, 2, "Plantilla del correo", { map: 1, closed: 1500 });
+    iss(B, 3, "Agrupar alertas repetidas", { map: 1, who: 1 });
+    iss(B, 4, "Silenciar una Instalación", { map: 1, by: [3] });
+    iss(B, 5, "Enlace al issue en el correo", { map: 1 });
+    iss(B, 6, "Resumen diario", { map: 1, age: 70 });
+    iss(B, 9, "Limpiar alertas viejas");
+    iss(B, 10, "Registrar tiempos de respuesta");
+    iss(B, 11, "Documentar el formato de alerta", { who: 1 });
+    map(G, 1, "Sitio nuevo", 5000);
+    iss(G, 2, "Portada", { map: 1, closed: 3000 });
+    iss(G, 3, "Página de precios", { map: 1, who: 1 });
+    iss(G, 4, "Formulario de contacto", { map: 1, by: [3] });
+    iss(G, 5, "Casos de clientes", { map: 1, by: [4] });
+    iss(G, 7, "Arreglar el pie en teléfonos");
+    iss(G, 8, "Optimizar imágenes");
+    const pr = (repo, n, title, closes, ageMin, head) => s.prs.set(prKeyOf(repo, n), { key: prKeyOf(repo, n), repo, number: n, title: "Ejemplo: " + title, url: prUrl(repo, n), closes, head: head || "", created: now - ageMin * min });
+    pr(A, 21, "Botón de micrófono", [keyOf(A, 5)], 300, "feat/5-boton-microfono");
+    pr(B, 8, "Enlace al issue", [keyOf(B, 5)], 180, "feat/5-enlace-issue");
+    pr(G, 12, "Ajustar tipografía", [], 50, "chore/12-tipografia");
+    s.work.set(keyOf(A, 4), { kind: "agent", at: now - 6 * min, branch: "feat/4-proveedor-voz", baseline: true });
+    s.work.set(keyOf(B, 3), { kind: "human", at: now - 12 * min, branch: "fix/3-agrupar", baseline: true });
+    s.claude.set(G, now - 4 * min);
+    demoClosed.set(prKeyOf(A, 19), { repo: A, number: 19, title: "Ejemplo: Transcribir notas", merged: true, at: now - 35 * min, closes: [keyOf(A, 3)] });
+    demoNext.set(A, 40); demoNext.set(B, 40); demoNext.set(G, 40);
+    restate(s);
+    return s;
+  }
+  const DEMO_TITLES = ["Mover el selector de idioma", "Nuevo correo de bienvenida", "Medir el tiempo de carga", "Ordenar los filtros", "Aviso de sesión vencida", "Etiquetas en los Borradores", "Probar en tablets", "Revisar los textos de error", "Atajo para buscar", "Guardar la vista elegida"];
+  const DEMO_MAPS = ["Oficina sin conexión", "Informes semanales", "Panel para clientes", "Agenda compartida"];
+  function demoNum(repo) { const n = demoNext.get(repo) || 50; demoNext.set(repo, n + 1); return n; }
+
+  /* ================= masks: data that arrived but whose event has not played yet ================= */
+  let latest = emptySnap();     // what the scene is built from (live: last real snapshot, plus demo-button changes)
+  let lastReal = null;          // last real snapshot, for real diffs
+  let baselineDone = false;
+  const hiddenIssues = new Set(), hiddenMaps = new Set(), hiddenPrs = new Set(), hiddenWork = new Set();
+  const heldMap = new Map(), heldState = new Map(), ghostIssues = new Map(), ghostPrs = new Map();
+  const litRepos = new Map();   // repo -> until (claude/... branch activity)
+
+  function viewModel() {
+    const issues = new Map();
+    for (const [k, i] of latest.issues) {
+      if (hiddenIssues.has(k)) continue;
+      issues.set(k, { ...i, map: heldMap.has(k) ? heldMap.get(k) : i.map, state: heldState.has(k) ? heldState.get(k) : i.state });
+    }
+    for (const [k, i] of ghostIssues) if (!issues.has(k)) issues.set(k, { ...i, ghost: true, state: heldState.has(k) ? heldState.get(k) : i.state });
+    const maps = new Map();
+    for (const [k, m] of latest.maps) if (!hiddenMaps.has(k)) maps.set(k, m);
+    for (const i of issues.values()) if (i.map && !maps.has(i.map)) i.map = null;
+    const prs = new Map();
+    for (const [k, p] of latest.prs) if (!hiddenPrs.has(k)) prs.set(k, p);
+    for (const [k, p] of ghostPrs) if (!prs.has(k)) prs.set(k, p);
+    const work = new Map();
+    for (const [k, w] of latest.work) if (!hiddenWork.has(k) && issues.has(k)) work.set(k, w);
+    return { issues, maps, prs, work };
+  }
+
+  /* ================= diff -> events ================= */
+  function diff(a, b, fake) {
+    const evs = [];
+    const now = Date.now();
+    for (const [k, m] of b.maps) {
+      if (a.maps.has(k)) continue;
+      hiddenMaps.add(k);
+      const kids = [];
+      for (const i of b.issues.values()) {
+        if (i.map !== k) continue;
+        if (!a.issues.has(i.key)) hiddenIssues.add(i.key);
+        else heldMap.set(i.key, a.issues.get(i.key).map);
+        kids.push(i.key);
+      }
+      evs.push({ type: "bigbang", map: k, kids, repo: m.repo, at: m.created || now, url: m.url, text: `Mapa nuevo: ${m.title}` });
+    }
+    const closes = new Map();
+    for (const [k, i] of b.issues) {
+      const o = a.issues.get(k);
+      if (!o) {
+        if (i.map && !a.maps.has(i.map)) continue;
+        if (i.state === "done") continue;
+        hiddenIssues.add(k);
+        if (i.map) evs.push({ type: "flare", issue: k, map: i.map, repo: i.repo, at: i.created || now, url: i.url, text: `#${i.number} entra a ${mapName(b, i.map)}` });
+        else evs.push({ type: "rift", issue: k, repo: i.repo, at: i.created || now, url: i.url, text: `Issue nuevo #${i.number}` });
+        continue;
+      }
+      if (i.map && i.map !== o.map && a.maps.has(i.map)) {
+        heldMap.set(k, o.map);
+        evs.push({ type: "adopt", issue: k, map: i.map, repo: i.repo, at: now, url: i.url, text: `#${i.number} se suma a ${mapName(b, i.map)}` });
+      }
+      if (o.state !== "done" && i.state === "done") closes.set(k, o);
+    }
+    for (const [k, o] of a.issues) if (!b.issues.has(k) && o.state !== "done") closes.set(k, o);
+
+    for (const [k, p] of b.prs) {
+      if (a.prs.has(k)) continue;
+      hiddenPrs.add(k);
+      for (const ik of p.closes) {
+        const o = a.issues.get(ik), n = b.issues.get(ik);
+        if (o && n && o.state !== n.state && !heldState.has(ik)) heldState.set(ik, o.state);
+      }
+      const first = p.closes[0];
+      const text = first ? `PR #${p.number} cierra ${refText(first, p.repo)}` : `PR #${p.number} abierto`;
+      evs.push({ type: "comet", pr: k, repo: p.repo, at: p.created || now, url: p.url, text });
+    }
+    const gone = [...a.prs.values()].filter(p => !b.prs.has(p.key));
+    const covered = new Set(gone.flatMap(p => p.closes));
+    for (const [k, o] of closes) {
+      if (!heldState.has(k)) heldState.set(k, o.state);
+      if (!b.issues.has(k)) ghostIssues.set(k, { ...o });
+      if (!covered.has(k)) evs.push({ type: "close", issue: k, repo: o.repo, at: now, url: o.url, text: `#${o.number} cerrado` });
+    }
+    for (const p of gone) ghostPrs.set(p.key, p);
+
+    for (const [k, w] of b.work) {
+      const o = a.work.get(k);
+      if (o && o.kind === w.kind) continue;
+      if (w.baseline) continue;
+      const i = b.issues.get(k);
+      if (!i) continue;
+      hiddenWork.add(k);
+      evs.push({ type: w.kind, issue: k, repo: i.repo, at: w.at || now, url: i.url, text: w.kind === "agent" ? `Un agente trabaja en #${i.number}` : `Alguien trabaja en #${i.number}` });
+    }
+    for (const [r, at] of b.claude) {
+      if (a.claude.get(r) >= at) continue;
+      evs.push({ type: "glow", repo: r, at, url: `https://github.com/${OWNER}/${r}/branches`, text: "Un agente trabaja en una rama claude", quiet: true });
+    }
+    enqueue(evs);
+    if (gone.length) resolveGone(gone, fake).then(enqueue);
+  }
+  function mapName(snap, mk) { const m = snap.maps.get(mk) || latest.maps.get(mk); return m ? `«${m.title}»` : mk; }
+  function refText(k, fromRepo) { const [r, n] = k.split("#"); return (r === fromRepo ? "" : r) + "#" + n; }
+
+  async function resolveGone(gone, fake) {
+    const byRepo = new Map();
+    for (const p of gone) { if (!byRepo.has(p.repo)) byRepo.set(p.repo, []); byRepo.get(p.repo).push(p); }
+    const evs = [];
+    for (const [repo, list] of byRepo) {
+      const closed = (fake || demoMode) ? null : await closedPrs(repo);
+      for (const p of list) {
+        let merged = false, at = Date.now();
+        const d = demoClosed.get(p.key);
+        if (d) { merged = d.merged; at = d.at; }
+        else if (closed) {
+          const c = closed.find(x => Number(x.number) === p.number);
+          if (c) { merged = !!(c.merged || c.merged_at); at = time(c.merged_at || c.closed_at) || at; }
+        }
+        if (merged && p.closes.length) evs.push({ type: "supernova", pr: p.key, issues: p.closes.slice(), repo, at, url: p.url, text: `PR #${p.number} fusionado: cierra ${p.closes.map(k => refText(k, repo)).join(", ")}` });
+        else if (merged) evs.push({ type: "prgone", pr: p.key, repo, at, url: p.url, text: `PR #${p.number} fusionado` });
+        else evs.push({ type: "prgone", pr: p.key, repo, at, url: p.url, text: `PR #${p.number} cerrado sin fusionar` });
+      }
+    }
+    return evs;
+  }
+
+  /* ================= ingest ================= */
+  function ingest(next, opts = {}) {
+    if (!baselineDone) {
+      latest = next;
+      if (opts.real) lastReal = next;
+      baselineDone = true;
+      rebuildLog(next);
+      Scene.refresh(true);
+      return;
+    }
+    if (opts.real) {
+      diff(lastReal || latest, next, false);
+      lastReal = next;
+    } else diff(latest, next, !!opts.fake);
+    latest = next;
+    Scene.refresh(false);
+  }
+
+  /* ================= queue ================= */
+  // One after another, 1.5 s between starts. Built to grow (priorities, merging) later.
+  const queue = [];
+  let nextAt = 0;
+  function enqueue(evs) {
+    if (!evs || !evs.length) return;
+    queue.push(...evs);
+  }
+  let holding = false;
+  function pump(now) {
+    if (holding || !queue.length || now < nextAt) return;
+    const ev = queue.shift();
+    nextAt = now + QUEUE_GAP;
+    // On the tour, the camera goes to an event that is off screen (or too small) before it plays.
+    if (Scene.touring() && Scene.needsTravel(targetsOf(ev))) {
+      holding = true;
+      Scene.travelForEvent(targetsOf(ev), () => { holding = false; nextAt = performance.now() + QUEUE_GAP; play(ev); });
+      return;
+    }
+    play(ev);
+  }
+  function play(ev) {
+    const fx = !still() && Scene.ready();
+    switch (ev.type) {
+      case "bigbang": hiddenMaps.delete(ev.map); for (const k of ev.kids) { hiddenIssues.delete(k); heldMap.delete(k); } break;
+      case "rift": case "flare": hiddenIssues.delete(ev.issue); break;
+      case "adopt": heldMap.delete(ev.issue); break;
+      case "comet": hiddenPrs.delete(ev.pr); break;
+      case "close": break;
+      case "agent": case "human": hiddenWork.delete(ev.issue); break;
+      case "glow": litRepos.set(ev.repo, ev.at + WORK_TTL); break;
+      default: break;
+    }
+    if (ev.type !== "action") Scene.refresh(false, fx ? ev : null);
+    if (fx) Scene.fx(ev);
+    else settle(ev);
+    // An Action logs its outcome when the flash lands.
+    if (ev.type === "action" && fx) setTimeout(() => pushLog(ev), 2500);
+    else pushLog(ev);
+  }
+  // Reduced motion (or no canvas): the state changes at once, without the show.
+  function settle(ev) {
+    if (ev.type === "comet") { const p = latest.prs.get(ev.pr); if (p) for (const k of p.closes) heldState.delete(k); }
+    if (ev.type === "close") { heldState.delete(ev.issue); ghostIssues.delete(ev.issue); }
+    if (ev.type === "supernova") { for (const k of ev.issues) { heldState.delete(k); ghostIssues.delete(k); } ghostPrs.delete(ev.pr); }
+    if (ev.type === "prgone") ghostPrs.delete(ev.pr);
+    Scene.refresh(false);
+  }
+
+  /* ================= bitácora ================= */
+  let log = [];
+  const PIP = { rift: "--ice", bigbang: "--sky", flare: "--sky", adopt: "--blue-text", comet: "--blue-text", supernova: "--sky", prgone: "--ink-faint", close: "--ink-faint", agent: "--agent", human: "--human", glow: "--agent", ok: "--ok", fail: "--fail" };
+  function pushLog(ev, silent) {
+    const type = ev.type === "action" ? (ev.ok ? "ok" : "fail") : ev.type;
+    log.push({ id: Math.random().toString(36).slice(2), type, text: ev.text, url: ev.url, repo: ev.repo, at: Math.min(Date.now(), ev.at || Date.now()), fresh: !silent, targets: targetsOf(ev) });
+    log.sort((x, y) => x.at - y.at);
+    log = log.slice(-5);
+    renderLog();
+  }
+  // What an event touched: its issues, the map's sun, the repo's galaxy and the PR's trail.
+  function targetsOf(ev) {
+    const t = { issues: [], maps: [], repos: [], prs: [] };
+    if (ev.repo) t.repos.push(ev.repo);
+    if (ev.issue) t.issues.push(ev.issue);
+    if (ev.issues) t.issues.push(...ev.issues);
+    if (ev.kids) t.issues.push(...ev.kids);
+    if (ev.map) t.maps.push(ev.map);
+    if (ev.pr) {
+      t.prs.push(ev.pr);
+      const p = latest.prs.get(ev.pr) || ghostPrs.get(ev.pr);
+      if (p && !ev.issues) t.issues.push(...p.closes);
+    }
+    for (const k of t.issues) {
+      const i = latest.issues.get(k) || ghostIssues.get(k);
+      if (i && i.map) t.maps.push(i.map);
+      t.repos.push(i ? i.repo : k.split("#")[0]);
+    }
+    for (const k of Object.keys(t)) t[k] = [...new Set(t[k])];
+    return t;
+  }
+  let logHover = null;
+  function hoverLog(id) {
+    logHover = id;
+    const e = id && log.find(x => x.id === id);
+    Scene.highlight(e ? e.targets : null);
+  }
+  function renderLog() {
+    const now = Date.now();
+    log = log.filter(e => now - e.at < LOG_WINDOW || e === log[log.length - 1]);
+    const have = new Map([...$log.children].map(li => [li.dataset.id, li]));
+    const keep = new Set(log.map(e => e.id));
+    for (const [id, li] of have) if (!keep.has(id)) li.remove();
+    if (logHover && !keep.has(logHover)) hoverLog(null);
+    log.forEach((e, i) => {
+      let li = have.get(e.id);
+      if (!li) {
+        li = document.createElement("li");
+        li.dataset.id = e.id;
+        li.innerHTML = `<button type="button" class="log-go" title="Ver en el universo"><span class="pip" style="background:var(${PIP[e.type] || "--ice"});color:var(${PIP[e.type] || "--ice"})" aria-hidden="true"></span><span class="txt">${esc(e.text)}</span><span class="when"></span></button><a class="log-ext" href="${esc(e.url || "#")}" target="_blank" rel="noopener" title="Abrir en GitHub" aria-label="Abrir en GitHub: ${esc(e.text)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16L16 8M9.5 8H16v6.5"/></svg></a>`;
+        if (e.fresh && !still()) li.classList.add("in");
+        // Mouse or keyboard focus on a line lights up what it touched. Touch skips it. Click (or Enter) travels there.
+        const a = li.querySelector(".log-go");
+        a.addEventListener("click", () => { const x = log.find(y => y.id === e.id); if (x) Scene.travel(x.targets, 800); });
+        a.addEventListener("pointerenter", ev => { if (ev.pointerType !== "touch") hoverLog(e.id); });
+        a.addEventListener("pointerleave", ev => { if (ev.pointerType !== "touch" && logHover === e.id) hoverLog(null); });
+        a.addEventListener("focus", () => hoverLog(e.id));
+        a.addEventListener("blur", () => { if (logHover === e.id) hoverLog(null); });
+        e.fresh = false;
+      }
+      li.querySelector(".when").textContent = `· ${demoRepoLabel(e.repo)} · ${ago(e.at)}`;
+      const age = now - e.at;
+      const fade = age < 90 * 1000 ? 1 : clamp(0.82 - 0.5 * (age / LOG_WINDOW), 0.32, 0.82);
+      li.style.opacity = String(fade * (0.55 + 0.45 * ((i + 1) / log.length)));
+      $log.appendChild(li);
+    });
+  }
+  const demoRepoLabel = r => r || "";
+  setInterval(renderLog, 20 * 1000);
+
+  // First load: rebuild the last 2 h of the log from dates, without playing anything.
+  function rebuildLog(s) {
+    const now = Date.now(), from = now - LOG_WINDOW;
+    const items = [];
+    for (const m of s.maps.values()) if (m.created > from) items.push({ type: "bigbang", repo: m.repo, map: m.key, kids: [...s.issues.values()].filter(i => i.map === m.key).map(i => i.key), at: m.created, url: m.url, text: `Mapa nuevo: ${m.title}` });
+    for (const i of s.issues.values()) {
+      if (i.created > from && !(i.map && s.maps.get(i.map)?.created > from)) items.push({ type: i.map ? "flare" : "rift", repo: i.repo, issue: i.key, map: i.map || undefined, at: i.created, url: i.url, text: i.map ? `#${i.number} entra a ${mapName(s, i.map)}` : `Issue nuevo #${i.number}` });
+      if (i.closedAt > from) items.push({ type: "close", repo: i.repo, issue: i.key, at: i.closedAt, url: i.url, text: `#${i.number} cerrado` });
+    }
+    for (const p of s.prs.values()) if (p.created > from) items.push({ type: "comet", repo: p.repo, pr: p.key, at: p.created, url: p.url, text: p.closes[0] ? `PR #${p.number} cierra ${refText(p.closes[0], p.repo)}` : `PR #${p.number} abierto` });
+    for (const [k, w] of s.work) { const i = s.issues.get(k); if (i && w.at > from) items.push({ type: w.kind, repo: i.repo, issue: k, at: w.at, url: i.url, text: w.kind === "agent" ? `Un agente trabaja en #${i.number}` : `Alguien trabaja en #${i.number}` }); }
+    for (const [k, d] of demoClosed) if (d.at > from) items.push({ type: d.merged ? "supernova" : "prgone", repo: d.repo, pr: k, issues: d.closes.slice(), at: d.at, url: prUrl(d.repo, d.number), text: d.merged ? `PR #${d.number} fusionado: cierra ${d.closes.map(x => refText(x, d.repo)).join(", ")}` : `PR #${d.number} cerrado sin fusionar` });
+    items.sort((x, y) => x.at - y.at);
+    for (const it of items.slice(-5)) pushLog(it, true);
+    if (mcp && !demoMode) {
+      for (const repo of repos) closedPrs(repo).then(list => {
+        if (!list) return;
+        for (const c of list) {
+          const at = time(c.merged_at || c.closed_at);
+          if (!(at > from)) continue;
+          const merged = !!(c.merged || c.merged_at);
+          const cl = [...new Set(closingRefs(c.body, repo).map(r => keyOf(r.repo, r.number)))];
+          pushLog({ type: merged ? "supernova" : "prgone", repo, pr: prKeyOf(repo, c.number), issues: cl, at, url: c.html_url || prUrl(repo, c.number), text: merged ? (cl.length ? `PR #${c.number} fusionado: cierra ${cl.map(x => refText(x, repo)).join(", ")}` : `PR #${c.number} fusionado`) : `PR #${c.number} cerrado sin fusionar` }, true);
+        }
+      });
+    }
+  }
+
+  /* ================= status / notices ================= */
+  // Freshness: "actualizado hace 40 s" and a dot. Amber when the last round failed or nothing fresh for 3 min.
+  function agoSec(ms) {
+    const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 10) return "hace un momento";
+    if (s < 60) return `hace ${Math.floor(s / 10) * 10} s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `hace ${m} min`;
+    return `hace ${Math.floor(m / 60)} h`;
+  }
+  function renderStatus() {
+    if (demoMode) {
+      const why = "Datos de ejemplo. Ábrelo en claude.ai para ver GitHub.";
+      $status.innerHTML = `<span class="badge" title="${why}">Demo</span><span class="fresh" title="${why}" aria-label="${why}"><i class="dot" aria-hidden="true"></i>demo</span>`;
+      return;
+    }
+    if (!mcp || pageError) { $status.textContent = ""; return; }
+    if (!baselineDone || !liveSnapAt) { $status.innerHTML = `<span class="fresh"><i class="dot" aria-hidden="true"></i>cargando</span>`; return; }
+    const errs = [...new Set(repoErrors)];
+    const old = Date.now() - liveSnapAt > 3 * 60 * 1000;
+    let why = "Todo bien. Leo GitHub cada minuto.";
+    if (errs.length) why = `En la última ronda no pude leer ${errs.join(", ")}. Muestro lo último que tengo.`;
+    else if (old) why = "Hace más de 3 minutos que no llegan datos nuevos de GitHub. Muestro lo último que tengo.";
+    const cls = errs.length || old ? "stale" : "ok";
+    $status.innerHTML = `<span class="fresh ${cls}" title="${esc(why)}" aria-label="Actualizado ${agoSec(liveSnapAt)}. ${esc(why)}"><i class="dot" aria-hidden="true"></i>actualizado ${agoSec(liveSnapAt)}</span>`;
+  }
+  setInterval(renderStatus, 10 * 1000);
+  function showNotice(title, text, actionHtml) {
+    $notice.innerHTML = `<h2>${esc(title)}</h2><p>${esc(text)}</p>${actionHtml || ""}`;
+    $notice.hidden = false;
+  }
+  function hideNotice() { $notice.hidden = true; }
+  function renderError() {
+    const code = pageError.code;
+    let title = "No pude leer GitHub.", text = "", action = "";
+    if (code === "server_not_connected" || code === "server_not_found") { title = "Conecta GitHub."; text = "Agrega el conector de GitHub en claude.ai, en Ajustes → Conectores. Después vuelve a abrir esta página."; }
+    else if (code === "needs_reauth") { title = "Tu conexión con GitHub venció."; text = "Reconéctala en claude.ai, en Ajustes → Conectores."; }
+    else if (code === "selection_required") { title = "Elige una conexión de GitHub."; text = "Tienes más de una conexión con este nombre. Elige una en el aviso de claude.ai."; }
+    else if (code === "approval_required" || code === "consent_required") { title = "Esta página necesita tu permiso."; text = "Permite que lea tus issues, pull requests y ramas de GitHub. Solo lee."; action = `<button class="btn" id="allow" type="button">Dar permiso</button>`; }
+    else if (code === "not_in_manifest") { title = "La página no tiene permiso para leer GitHub."; text = "Actívalo en el menú Permisos de este artefacto."; action = `<button class="btn" id="manage" type="button">Abrir permisos</button>`; }
+    else if (code === "blocked_by_policy") { title = "Tu organización bloquea esta lectura."; text = "Pide acceso al conector de GitHub a quien administra tu cuenta de claude.ai."; }
+    else { title = "Esta vista no puede usar conectores."; text = "Abre la página en claude.ai para ver tus datos de GitHub."; }
+    showNotice(title, text, action);
+    renderStatus();
+    const restart = () => { pageError = null; hideNotice(); for (const k of [...watches.keys()]) drop(k); reconcileLive(); };
+    const allow = document.getElementById("allow");
+    if (allow) allow.addEventListener("click", async () => {
+      allow.disabled = true;
+      try { await mcp.callTool(SERVER, "list_issues", { owner: OWNER, repo: repos[0], state: "OPEN", fields: ["number"], perPage: 1 }, { cache: false }); restart(); }
+      catch (err) { allow.disabled = false; if (err && AUTHZ.has(err.code)) { pageError = err; renderError(); } }
+    });
+    const manage = document.getElementById("manage");
+    if (manage) manage.addEventListener("click", async () => {
+      try { const p = await window.claude.use("permissions"); if (p) await p.manage(); } catch (err) {}
+      restart();
+    });
+  }
+
+  /* ================= scene (PixiJS) ================= */
+  const Scene = (() => {
+    let app = null, ok = false;
+    let C = null;
+    const TEX = {};
+    let root, scene, bg, world, gLayer, gasLayer, lineLayer, dyn, glowLayer, bodyLayer, fxLayer;
+    let W = 0, H = 0;
+    const cam = { x: 0, y: 0, k: 1 };
+    let camTo = null, autoFit = true, fitDirty = true, portrait = false;
+    const galaxies = new Map();   // repo -> G
+    const nodes = new Map();      // issue key -> N
+    const suns = new Map();       // map key -> Sun
+    const trails = new Map();     // pr key -> T
+    const parts = [], pool = [];
+    const filters = new Set();
+    let T = 0, lastNow = 0, introA = 0;
+    let vm = { issues: new Map(), maps: new Map(), prs: new Map(), work: new Map() };
+    const claims = new Set();
+    let hover = null, selected = null, tipFor = null, mouse = null;
+    const dust = [];
+    let zoom = null, zsel = null;
+    let fxBusy = 0;
+    // Highlight from a hovered log line: hlT = targets, hlA eases in and out (~180 ms), hl = resolved objects this frame.
+    let hlT = null, hlA = 0, hl = null, hlG = null;
+    const arrows = [];
+    const chrome = [document.querySelector(".brand"), document.querySelector(".tools"), $log, $demo, document.getElementById("search")];
+
+    const num = hex => parseInt(String(hex).trim().replace("#", ""), 16) || 0xffffff;
+    function colors() {
+      const cs = getComputedStyle(document.documentElement);
+      const v = n => num(cs.getPropertyValue(n));
+      C = { ground: v("--ground-b"), deep: v("--ground-c"), ink: v("--ink"), muted: v("--ink-muted"), ice: v("--ice"), sky: v("--sky"), blue: v("--blue"), blueText: v("--blue-text"), orange: v("--orange"), gas: v("--gas"), ok: v("--ok"), fail: v("--fail"), human: v("--human"), agent: v("--agent") };
+    }
+    function radialTex(size, stops) {
+      const c = document.createElement("canvas");
+      c.width = c.height = size;
+      const g = c.getContext("2d");
+      const gr = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      for (const [o, a] of stops) gr.addColorStop(o, `rgba(255,255,255,${a})`);
+      g.fillStyle = gr;
+      g.fillRect(0, 0, size, size);
+      return PIXI.Texture.from(c);
+    }
+    function hasWebGL() {
+      try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
+    }
+
+    async function init() {
+      if (!window.PIXI || !hasWebGL()) {
+        showNotice("Esta pantalla necesita WebGL.", "Tu navegador no lo tiene activo. Prueba con Chrome, Edge o Safari actualizados, o activa la aceleración por hardware.", "");
+        return false;
+      }
+      colors();
+      app = new PIXI.Application();
+      try {
+        await app.init({ resizeTo: $gl, backgroundAlpha: 0, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true, preference: "webgl", powerPreference: "high-performance", hello: false });
+      } catch (e) {
+        showNotice("Esta pantalla necesita WebGL.", "No pude iniciar el dibujo en tu navegador. Prueba con Chrome, Edge o Safari actualizados.", "");
+        return false;
+      }
+      $gl.appendChild(app.canvas);
+      TEX.glow = radialTex(128, [[0, 1], [0.2, 0.42], [0.5, 0.1], [1, 0]]);
+      TEX.soft = radialTex(256, [[0, 0.75], [0.3, 0.42], [0.62, 0.12], [1, 0]]);
+      TEX.dot = radialTex(32, [[0, 1], [0.35, 0.85], [0.6, 0.25], [1, 0]]);
+      root = app.stage;
+      scene = new PIXI.Container();
+      root.addChild(scene);
+      bg = new PIXI.Container();
+      world = new PIXI.Container();
+      gLayer = new PIXI.Container();
+      gasLayer = new PIXI.Container();
+      lineLayer = new PIXI.Container();
+      dyn = new PIXI.Graphics();
+      glowLayer = new PIXI.Container();
+      bodyLayer = new PIXI.Container();
+      fxLayer = new PIXI.Container();
+      hlG = new PIXI.Graphics();
+      lineLayer.addChild(dyn);
+      world.addChild(gLayer, gasLayer, lineLayer, glowLayer, bodyLayer, fxLayer, hlG);
+      scene.addChild(bg, world);
+      let seed = 11;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 260; i++) {
+        const sp = new PIXI.Sprite(TEX.dot);
+        sp.anchor.set(0.5);
+        const s = 0.04 + rnd() * rnd() * 0.12;
+        sp.scale.set(s);
+        sp.tint = rnd() < 0.18 ? C.sky : C.ice;
+        const a = 0.15 + rnd() * 0.5;
+        sp.alpha = a;
+        bg.addChild(sp);
+        dust.push({ sp, u: rnd(), v: rnd(), p: i % 3 === 0 ? 0.06 : 0.02, a, tw: rnd() * TAU, ts: 0.3 + rnd() * 0.9 });
+      }
+      W = app.screen.width; H = app.screen.height;
+      portrait = H > W * 1.15;
+      app.renderer.on("resize", (w, h) => {
+        W = w; H = h;
+        const p = H > W * 1.15;
+        if (p !== portrait) { portrait = p; layout(); }
+        fitDirty = true;
+        if (autoFit) { const f = fitTarget(); if (f) { Object.assign(cam, f); camTo = null; syncZoom(f); } }
+      });
+      // GSAP rides the same ticker as Pixi: one clock for the whole page.
+      if (window.gsap) { gsap.ticker.remove(gsap.updateRoot); gsap.ticker.lagSmoothing(0); }
+      app.ticker.maxFPS = 60;
+      app.ticker.add(tick);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) app.ticker.stop();
+        else { lastNow = 0; app.ticker.start(); }
+      });
+      bindInput();
+      ok = true;
+      return true;
+    }
+
+    /* ----- galaxies ----- */
+    function makeGalaxy(repo) {
+      const h = hash(repo);
+      const G = { repo, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, R: 120, Rt: 120, stars: [], sysOff: new Map(), orphanOff: new Map(), foreignOff: new Map(), cloud: null, count: 0, pulse: 0, flashTint: null, flashA: 0, wave: null, lit: 0, spin: h * TAU, dying: false };
+      G.halo = new PIXI.Sprite(TEX.soft); G.halo.anchor.set(0.5); G.halo.tint = C.blue; G.halo.blendMode = "add"; G.halo.alpha = 0.2;
+      G.core = new PIXI.Sprite(TEX.glow); G.core.anchor.set(0.5); G.core.tint = C.sky; G.core.blendMode = "add"; G.core.alpha = 0.3;
+      G.rot = new PIXI.Container();
+      gLayer.addChild(G.halo, G.rot, G.core);
+      let seed = Math.floor(h * 1e6) + 3;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const gauss = () => (rnd() + rnd() + rnd() - 1.5) / 1.5;
+      // Two faint arms of stars plus a bulge: a cluster that turns slowly.
+      for (let i = 0; i < 300; i++) {
+        let ux, uy, s, a;
+        if (i < 60) { const r = Math.abs(gauss()) * 0.22, t = rnd() * TAU; ux = Math.cos(t) * r; uy = Math.sin(t) * r * 0.9; s = 0.05 + rnd() * 0.08; a = 0.3 + rnd() * 0.5; }
+        else { const arm = i % 2, t = rnd(); const rr = 0.14 + t * 0.92 + gauss() * 0.05; const th = arm * Math.PI + t * 3.6 + gauss() * (0.38 - t * 0.18); ux = Math.cos(th) * rr; uy = Math.sin(th) * rr; s = 0.03 + rnd() * rnd() * 0.1; a = 0.12 + rnd() * 0.45 * (1 - t * 0.5); }
+        const sp = new PIXI.Sprite(TEX.dot); sp.anchor.set(0.5); sp.scale.set(s); sp.alpha = a; sp.tint = rnd() < 0.35 ? C.sky : C.ice; sp.blendMode = "add";
+        G.rot.addChild(sp);
+        G.stars.push({ sp, ux, uy, dx: 0, dy: 0, vx: 0, vy: 0, a });
+      }
+      G.puffs = [];
+      for (let i = 0; i < 6; i++) {
+        const arm = i % 2, t = 0.25 + (i >> 1) * 0.28, th = arm * Math.PI + t * 3.6;
+        const sp = new PIXI.Sprite(TEX.soft); sp.anchor.set(0.5); sp.tint = C.blue; sp.blendMode = "add"; sp.alpha = 0.07;
+        G.rot.addChildAt(sp, 0);
+        G.puffs.push({ sp, ux: Math.cos(th) * t, uy: Math.sin(th) * t, s: 0.5 - t * 0.2 });
+      }
+      G.ring = new PIXI.Graphics(); G.ring.blendMode = "add";
+      gLayer.addChild(G.ring);
+      G.label = document.createElement("a");
+      G.label.className = "lab lab-gal";
+      G.label.target = "_blank"; G.label.rel = "noopener";
+      G.label.href = `https://github.com/${OWNER}/${repo}/issues`;
+      $labels.appendChild(G.label);
+      G.gas = { base: null, blobs: new Map() };
+      return G;
+    }
+    function destroyGalaxy(G) {
+      for (const o of [G.halo, G.rot, G.core, G.ring]) o.destroy({ children: true });
+      if (G.gas.base) G.gas.base.destroy();
+      for (const b of G.gas.blobs.values()) b.sp.destroy();
+      G.label.remove();
+    }
+
+    /* ----- nodes ----- */
+    function drawIssue(n) {
+      const g = n.body, r = 5, st = n.data.state;
+      g.clear();
+      if (st === "blocked") {
+        const q = r * 1.15;
+        g.poly([0, -q - 2, q + 2, 0, 0, q + 2, -q - 2, 0]).fill({ color: C.deep, alpha: 0.9 });
+        g.poly([0, -q, q, 0, 0, q, -q, 0]).fill({ color: C.orange });
+      } else {
+        g.circle(0, 0, r + 2).fill({ color: C.deep, alpha: 0.85 });
+        if (st === "doing") { g.circle(0, 0, r).fill({ color: C.blue }); g.circle(0, 0, r - 0.5).stroke({ width: 1, color: C.sky, alpha: 0.85 }); }
+        else if (st === "review") { g.circle(0, 0, r - 0.85).stroke({ width: 1.7, color: C.blueText }); g.circle(0, 0, r * 0.36).fill({ color: C.blueText }); }
+        else if (st === "done") { g.circle(0, 0, r * 0.5).fill({ color: C.ice, alpha: 0.4 }); }
+        else { g.circle(0, 0, r - 0.85).stroke({ width: 1.7, color: C.muted }); }
+      }
+      const GL = { doing: [C.sky, 0.55, 5.4], review: [C.blueText, 0.34, 4.6], blocked: [C.orange, 0.26, 4.2], todo: [C.ice, 0.11, 3.6], done: [C.ice, 0.05, 2.6] }[st] || [C.ice, 0.1, 3];
+      n.glow.tint = GL[0]; n.glowA = GL[1]; n.glowS = GL[2] * r * 2 / 128;
+      n.drawn = st;
+    }
+    function makeNode(d) {
+      const n = { key: d.key, data: d, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, ap: 0, apTo: 1, hold: false, dying: false, h1: hash(d.key), h2: hash(d.key + "~"), role: "orphan", satA: 0, ping: 0, travel: null, burst: 0, hist: null };
+      n.glow = new PIXI.Sprite(TEX.glow); n.glow.anchor.set(0.5); n.glow.blendMode = "add";
+      n.body = new PIXI.Graphics();
+      n.sat = new PIXI.Sprite(TEX.dot); n.sat.anchor.set(0.5); n.sat.blendMode = "add"; n.sat.alpha = 0;
+      n.satGlow = new PIXI.Sprite(TEX.glow); n.satGlow.anchor.set(0.5); n.satGlow.blendMode = "add"; n.satGlow.alpha = 0;
+      glowLayer.addChild(n.glow, n.satGlow);
+      bodyLayer.addChild(n.body, n.sat);
+      n.label = null;
+      drawIssue(n);
+      return n;
+    }
+    function destroyNode(n) {
+      gsap.killTweensOf(n);
+      n.glow.destroy(); n.body.destroy(); n.sat.destroy(); n.satGlow.destroy();
+      if (n.label) n.label.remove();
+    }
+    function drawSun(s) {
+      const g = s.body, r = s.r;
+      g.clear();
+      g.circle(0, 0, r + 8).fill({ color: C.deep, alpha: 0.9 });
+      g.circle(0, 0, r).fill({ color: C.ice });
+      s.progDrawn = -1;
+    }
+    function drawProg(s) {
+      const g = s.prog, r = s.r + 5;
+      g.clear();
+      g.circle(0, 0, r).stroke({ width: 2.5, color: C.ice, alpha: 0.2 });
+      if (s.prog01 > 0.001) {
+        const a0 = -Math.PI / 2, a1 = a0 + TAU * Math.min(1, s.prog01);
+        g.moveTo(Math.cos(a0) * r, Math.sin(a0) * r).arc(0, 0, r, a0, a1).stroke({ width: 2.5, color: C.sky, cap: "round" });
+      }
+      s.progDrawn = s.prog01;
+    }
+    function makeSun(d) {
+      const s = { key: d.key, data: d, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, ap: 0, apTo: 1, hold: false, dying: false, r: 15, rings: [], prog01: 0, progTo: 0, flare: 0, h1: hash(d.key) };
+      s.glow = new PIXI.Sprite(TEX.glow); s.glow.anchor.set(0.5); s.glow.blendMode = "add"; s.glow.tint = C.sky;
+      s.corona = new PIXI.Sprite(TEX.glow); s.corona.anchor.set(0.5); s.corona.blendMode = "add"; s.corona.tint = C.ice;
+      s.orbit = new PIXI.Graphics();
+      s.body = new PIXI.Graphics();
+      s.prog = new PIXI.Graphics();
+      lineLayer.addChildAt(s.orbit, 0);
+      glowLayer.addChild(s.glow, s.corona);
+      bodyLayer.addChild(s.body, s.prog);
+      s.label = document.createElement("a");
+      s.label.className = "lab lab-map";
+      s.label.target = "_blank"; s.label.rel = "noopener";
+      $labels.appendChild(s.label);
+      return s;
+    }
+    function destroySun(s) {
+      gsap.killTweensOf(s);
+      for (const o of [s.glow, s.corona, s.orbit, s.body, s.prog]) o.destroy();
+      s.label.remove();
+    }
+
+    /* ----- refresh: view model -> scene objects + layout ----- */
+    function refresh(first, ev) {
+      if (!ok) return;
+      vm = viewModel();
+      if (ev) claimFor(ev);
+      const repoList = repos.slice();
+      for (const r of repoList) if (!galaxies.has(r)) galaxies.set(r, makeGalaxy(r));
+      for (const [r, G] of galaxies) if (!repoList.includes(r)) { destroyGalaxy(G); galaxies.delete(r); }
+      // suns
+      for (const [k, m] of vm.maps) {
+        let s = suns.get(k);
+        if (!s) { s = makeSun(m); suns.set(k, s); s.fresh = true; if (claims.has(k)) { s.hold = true; s.ap = 0; } else if (first) s.ap = 1; }
+        s.data = m; s.dying = false; s.apTo = 1;
+      }
+      for (const [k, s] of suns) if (!vm.maps.has(k)) { s.dying = true; s.apTo = 0; }
+      // issue nodes
+      for (const [k, i] of vm.issues) {
+        let n = nodes.get(k);
+        if (!n) { n = makeNode(i); nodes.set(k, n); n.fresh = true; if (claims.has(k)) { n.hold = true; n.ap = 0; } else if (first) n.ap = 1; }
+        const was = n.data.state;
+        n.data = i; n.dying = false; n.apTo = 1;
+        if (was !== i.state || n.drawn !== i.state) { drawIssue(n); if (!first && !n.fresh) n.ping = 1; }
+        n.work = vm.work.get(k) || null;
+      }
+      for (const [k, n] of nodes) if (!vm.issues.has(k)) { n.dying = true; n.apTo = 0; n.hold = false; }
+      // trails
+      for (const [k, p] of vm.prs) {
+        let t = trails.get(k);
+        if (!t) { t = { key: k, pr: p, prog: claims.has(k) ? 0 : 1, alpha: claims.has(k) ? 0.5 : (first ? 0.5 : 0), aTo: 0.5, dying: false, head: null, h: hash(k) }; trails.set(k, t); }
+        t.pr = p; t.dying = false; t.aTo = 0.5;
+      }
+      for (const [k, t] of trails) if (!vm.prs.has(k)) { t.dying = true; t.aTo = 0; }
+      layout();
+      // New objects start where they belong (fx may move them right after).
+      for (const s of suns.values()) if (s.fresh) { s.fresh = false; targetSun(s); s.x = s.tx; s.y = s.ty; }
+      for (const n of nodes.values()) if (n.fresh) { n.fresh = false; targetNode(n); n.x = n.tx; n.y = n.ty; }
+      if (first) { for (const G of galaxies.values()) { G.x = G.tx; G.y = G.ty; G.R = G.Rt; } introA = still() ? 1 : 0; const f = fitTarget(); if (f) { Object.assign(cam, f); syncZoom(f); } }
+      claims.clear();
+      describe();
+    }
+    function claimFor(ev) {
+      if (ev.type === "bigbang") { claims.add(ev.map); for (const k of ev.kids) if (!nodes.has(k)) claims.add(k); }
+      if (ev.type === "rift" || ev.type === "flare") claims.add(ev.issue);
+      if (ev.type === "comet") claims.add(ev.pr);
+    }
+    function describe() {
+      const ni = [...vm.issues.values()].filter(i => i.state !== "done").length;
+      $desc.textContent = `${ni} issues abiertos en ${vm.maps.size} mapas, en ${repos.length} repos. Cada repo es una galaxia; cada mapa, un sol con sus issues en órbita. Los issues sin mapa flotan en una nube rojiza.`;
+    }
+
+    /* ----- layout ----- */
+    function layout() {
+      const byRepo = new Map(repos.map(r => [r, { systems: [], orphans: [], foreign: [] }]));
+      for (const s of suns.values()) if (!s.dying && byRepo.has(s.data.repo)) byRepo.get(s.data.repo).systems.push(s);
+      for (const n of nodes.values()) {
+        if (n.dying && n.ap < 0.05) continue;
+        const d = n.data, home = byRepo.get(d.repo);
+        if (!home) continue;
+        const sun = d.map ? suns.get(d.map) : null;
+        if (sun && !sun.dying) {
+          n.sun = sun;
+          if (sun.data.repo === d.repo) { n.role = "planet"; } else { n.role = "foreign"; home.foreign.push(n); }
+        } else { n.sun = null; n.role = "orphan"; home.orphans.push(n); }
+      }
+      // Planets: rings by dependency depth around their sun.
+      for (const s of suns.values()) {
+        if (s.dying) continue;
+        const kids = [...nodes.values()].filter(n => n.role === "planet" && n.sun === s && !(n.dying && n.ap < 0.05));
+        const keys = new Set(kids.map(n => n.key));
+        const depth = new Map();
+        const dep = (n, trail) => {
+          if (depth.has(n.key)) return depth.get(n.key);
+          if (trail.has(n.key)) return 1;
+          trail.add(n.key);
+          let d = 1;
+          for (const b of n.data.blockers || []) if (keys.has(b)) d = Math.max(d, dep(nodes.get(b), trail) + 1);
+          trail.delete(n.key);
+          depth.set(n.key, d);
+          return d;
+        };
+        let maxD = 0;
+        const rings = new Map();
+        for (const n of kids) { const d = dep(n, new Set()); maxD = Math.max(maxD, d); if (!rings.has(d)) rings.set(d, []); rings.get(d).push(n); }
+        const n1 = (rings.get(1) || []).length;
+        const r1 = Math.max(44, n1 * 20 / TAU + 30);
+        const ring = d => r1 + (d - 1) * 30;
+        s.rings = [];
+        for (let d = 1; d <= maxD; d++) s.rings.push(ring(d));
+        const total = kids.length;
+        const done = kids.filter(n => n.data.state === "done").length;
+        s.total = total; s.done = done;
+        s.r = clamp(12 + Math.sqrt(total) * 1.7, 13, 22);
+        s.R = maxD ? ring(maxD) + 16 : s.r + 30;
+        const off = s.h1 * TAU;
+        for (const [d, list] of rings) {
+          list.sort((a, b) => a.data.number - b.data.number);
+          const rr = ring(d);
+          list.forEach((n, i) => { n.ring = rr; n.theta0 = off + d * 0.9 + i / list.length * TAU; n.omega = still() ? 0 : TAU / (160 * Math.pow(rr / 60, 1.5)); });
+        }
+        if (!s.hold) { const p = total ? done / total : 0; if (Math.abs(p - s.progTo) > 1e-6) { s.progTo = p; } }
+        drawOrbit(s);
+        s.label.href = s.data.url;
+        s.label.setAttribute("aria-label", `Mapa ${s.data.title}: ${done} de ${total} hechos`);
+        s.label.innerHTML = `<b>${esc(s.data.title)}</b><span>${s.data.failed ? "No pude leer sus issues hijos" : total ? `${done} de ${total}` : "sin issues hijos"}</span>`;
+      }
+      // Galaxies: systems, the orphan cloud and the foreign cluster, packed as circles.
+      for (const [repo, home] of byRepo) {
+        const G = galaxies.get(repo);
+        if (!G) continue;
+        const items = [];
+        const no = home.orphans.length, nf = home.foreign.length;
+        const cloudR = no ? 15 * Math.sqrt(no) + 22 : 0;
+        if (no) items.push({ id: "O", r: cloudR + 20 });
+        home.systems.sort((a, b) => a.data.number - b.data.number);
+        for (const s of home.systems) items.push({ id: s.key, r: s.R + 18 });
+        const foreignR = nf ? 13 * Math.sqrt(nf) + 14 : 0;
+        if (nf) items.push({ id: "F", r: foreignR + 22 });
+        let R = 90;
+        G.sysOff.clear(); G.orphanOff.clear(); G.foreignOff.clear();
+        if (items.length) {
+          const circles = items.map(it => ({ id: it.id, r: it.r }));
+          d3.packSiblings(circles);
+          const enc = d3.packEnclose(circles);
+          for (const c of circles) {
+            const x = c.x - enc.x, y = c.y - enc.y;
+            if (c.id === "O") G.cloud = { x, y, r: cloudR };
+            else if (c.id === "F") G.foreign = { x, y, r: foreignR };
+            else G.sysOff.set(c.id, { x, y });
+          }
+          R = Math.max(80, enc.r + 22);
+        }
+        if (!no) G.cloud = null;
+        home.orphans.sort((a, b) => a.data.number - b.data.number);
+        home.orphans.forEach((n, i) => { const rr = 15 * Math.sqrt(i + 0.5), a = i * 2.39996 + hash(repo) * TAU; G.orphanOff.set(n.key, { x: G.cloud.x + Math.cos(a) * rr, y: G.cloud.y + Math.sin(a) * rr }); });
+        home.foreign.sort((a, b) => a.data.number - b.data.number);
+        home.foreign.forEach((n, i) => { const rr = 13 * Math.sqrt(i + 0.5), a = i * 2.39996 + 1; G.foreignOff.set(n.key, { x: G.foreign.x + Math.cos(a) * rr, y: G.foreign.y + Math.sin(a) * rr }); });
+        G.Rt = R;
+        G.count = [...nodes.values()].filter(n => n.data.repo === repo && n.data.state !== "done" && !n.dying).length;
+        G.label.innerHTML = `${esc(repo)}<span>${G.count ? G.count + (G.count === 1 ? " abierto" : " abiertos") : "nada abierto"}</span>`;
+        syncGas(G, home.orphans);
+      }
+      // Galaxies side by side (stacked when the screen is tall), slightly staggered.
+      const list = repos.map(r => galaxies.get(r)).filter(Boolean);
+      const gap = portrait ? 36 : 70;
+      let acc = 0;
+      const pos = list.map((G, i) => { const c = acc + G.Rt; acc += G.Rt * 2 + gap; return { G, c, s: (i % 2 ? 1 : -1) * G.Rt * 0.12 }; });
+      const mid = (acc - gap) / 2;
+      for (const p of pos) {
+        if (portrait) { p.G.tx = p.s; p.G.ty = p.c - mid; }
+        else { p.G.tx = p.c - mid; p.G.ty = p.s; }
+      }
+      fitDirty = true;
+    }
+    function drawOrbit(s) {
+      const g = s.orbit;
+      g.clear();
+      s.rings.forEach((r, i) => g.circle(0, 0, r).stroke({ width: 1, color: C.ice, alpha: 0.08 - i * 0.012 }));
+    }
+    function syncGas(G, orphans) {
+      const keys = new Set(orphans.map(n => n.key));
+      if (G.cloud && !G.gas.base) {
+        const sp = new PIXI.Sprite(TEX.soft); sp.anchor.set(0.5); sp.tint = C.gas; sp.blendMode = "add"; sp.alpha = 0;
+        gasLayer.addChild(sp); G.gas.base = sp;
+      }
+      for (const k of keys) if (!G.gas.blobs.has(k)) {
+        const sp = new PIXI.Sprite(TEX.soft); sp.anchor.set(0.5); sp.tint = C.gas; sp.blendMode = "add"; sp.alpha = 0;
+        gasLayer.addChild(sp);
+        const n = nodes.get(k);
+        G.gas.blobs.set(k, { sp, x: n ? n.x : 0, y: n ? n.y : 0, a: 0, h: hash(k), on: true });
+      }
+      for (const [k, b] of G.gas.blobs) b.on = keys.has(k);
+    }
+
+    /* ----- targets ----- */
+    function targetSun(s) {
+      const G = galaxies.get(s.data.repo);
+      const o = G && G.sysOff.get(s.key);
+      if (!G) return;
+      if (o) { s.tx = G.x + o.x; s.ty = G.y + o.y; }
+      else { s.tx = G.x; s.ty = G.y; }
+    }
+    function targetNode(n) {
+      const G = galaxies.get(n.data.repo);
+      if (!G) return;
+      if (n.role === "planet" && n.sun) {
+        const a = n.theta0 + n.omega * T;
+        n.tx = n.sun.x + Math.cos(a) * n.ring; n.ty = n.sun.y + Math.sin(a) * n.ring;
+      } else if (n.role === "foreign") {
+        const o = G.foreignOff.get(n.key) || { x: 0, y: 0 };
+        n.tx = G.x + o.x; n.ty = G.y + o.y;
+      } else {
+        const o = G.orphanOff.get(n.key) || { x: 0, y: 0 };
+        n.tx = G.x + o.x; n.ty = G.y + o.y;
+      }
+    }
+
+    /* ----- camera ----- */
+    function fitTarget() {
+      if (!W || !H || !galaxies.size) return null;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const G of galaxies.values()) { x0 = Math.min(x0, G.tx - G.Rt); x1 = Math.max(x1, G.tx + G.Rt); y0 = Math.min(y0, G.ty - G.Rt - 20); y1 = Math.max(y1, G.ty + G.Rt); }
+      const small = W < 600;
+      const padX = small ? 16 : 40, top = small ? 118 : 104, bottom = small ? 92 : 110;
+      const k = clamp(Math.min((W - padX * 2) / (x1 - x0), (H - top - bottom) / (y1 - y0)), 0.08, 1.6);
+      return { k, x: W / 2 - (x0 + x1) / 2 * k, y: top + (H - top - bottom) / 2 - (y0 + y1) / 2 * k };
+    }
+    function syncZoom(t) {
+      if (!zoom || !zsel) return;
+      zoom.transform(zsel, d3.zoomIdentity.translate(t.x, t.y).scale(t.k));
+    }
+    /* ----- camera flights (travel, search, tour) ----- */
+    let flight = null;
+    function flyTo(t, ms, ease, onDone) {
+      stopFlight();
+      if (!t) { onDone && onDone(); return; }
+      autoFit = false; camTo = null;
+      if (still() || ms <= 0) { Object.assign(cam, t); syncZoom(t); onDone && onDone(); return; }
+      const v0 = [(W / 2 - cam.x) / cam.k, (H / 2 - cam.y) / cam.k, W / cam.k];
+      const v1 = [(W / 2 - t.x) / t.k, (H / 2 - t.y) / t.k, W / t.k];
+      const I = d3.interpolateZoom(v0, v1);
+      const o = { u: 0 };
+      fxBusy++;
+      flight = gsap.to(o, {
+        u: 1, duration: ms / 1000, ease: ease || "power2.inOut",
+        onUpdate: () => { const v = I(o.u), k = W / v[2]; cam.k = k; cam.x = W / 2 - v[0] * k; cam.y = H / 2 - v[1] * k; },
+        onComplete: () => { flight = null; fxBusy--; syncZoom({ ...cam }); onDone && onDone(); },
+        onInterrupt: () => { fxBusy--; },
+      });
+    }
+    function stopFlight() { if (flight) { flight.kill(); flight = null; syncZoom({ ...cam }); } }
+    function frameBox(x0, y0, x1, y1, kMax = 1.4) {
+      const small = W < 600, padX = small ? 24 : 80, top = small ? 130 : 120, bottom = small ? 110 : 130;
+      const k = clamp(Math.min((W - padX * 2) / Math.max(1, x1 - x0), (H - top - bottom) / Math.max(1, y1 - y0)), 0.12, kMax);
+      return { k, x: W / 2 - (x0 + x1) / 2 * k, y: top + (H - top - bottom) / 2 - (y0 + y1) / 2 * k };
+    }
+    function boxOf(t) {
+      const r = resolveHl(t);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      const add = (x, y, rr) => { x0 = Math.min(x0, x - rr); y0 = Math.min(y0, y - rr); x1 = Math.max(x1, x + rr); y1 = Math.max(y1, y + rr); };
+      for (const n of r.nodes) add(n.tx, n.ty, 40);
+      for (const s of r.suns) add(s.tx, s.ty, (s.rings.length ? s.rings[s.rings.length - 1] : s.r) + 24);
+      for (const G of r.ringGals) add(G.tx, G.ty, G.Rt);
+      if (!isFinite(x0)) for (const G of r.gals) add(G.tx, G.ty, G.Rt);
+      return isFinite(x0) ? { x0, y0, x1, y1 } : null;
+    }
+    function frameTargets(t) { const b = boxOf(t); return b ? frameBox(b.x0, b.y0, b.x1, b.y1) : null; }
+    // Travel to what an event (or a search hit) touched: ~800 ms, ease in-out; a cut with reduced motion.
+    function travel(t, ms) { if (tour) tourStop(); flyTo(frameTargets(t), ms ?? 800); }
+    function needsTravel(t) {
+      const b = boxOf(t);
+      if (!b) return false;
+      const a = toScreen(b.x0, b.y0), c = toScreen(b.x1, b.y1);
+      const inside = a.x >= 0 && a.y >= 60 && c.x <= W && c.y <= H - 60;
+      return !inside || cam.k < 0.45;
+    }
+    let tour = null;
+    function tourStart() {
+      if (tour || !ok || !galaxies.size) return;
+      tour = { i: -1, timer: 0 };
+      tourNext();
+    }
+    function tourStop() {
+      if (!tour) return;
+      clearTimeout(tour.timer);
+      tour = null;
+      stopFlight(); // the camera stays exactly where it was: no jump
+    }
+    function zoomAbout(t, f) { const k = t.k * f; return { k, x: W / 2 - (W / 2 - t.x) / t.k * k, y: H / 2 - (H / 2 - t.y) / t.k * k }; }
+    function tourNext() {
+      if (!tour) return;
+      const list = repos.map(r => galaxies.get(r)).filter(Boolean);
+      tour.i = (tour.i + 1) % (list.length + 1);
+      const G = list[tour.i];
+      const t = G ? frameBox(G.tx - G.Rt * 1.05, G.ty - G.Rt * 1.05, G.tx + G.Rt * 1.05, G.ty + G.Rt * 1.05, 1.1) : fitTarget();
+      const me = tour;
+      flyTo(t, 6000, "sine.inOut", () => {
+        if (tour !== me) return;
+        // Stay ~20 s, drifting in a touch.
+        flyTo(zoomAbout(t, 1.08), 20000, "sine.inOut", () => { if (tour === me) tourNext(); });
+      });
+    }
+    function travelForEvent(t, done) {
+      const me = tour;
+      clearTimeout(me.timer);
+      flyTo(frameTargets(t), 900, "power2.inOut", () => {
+        done();
+        if (tour === me) me.timer = setTimeout(() => { if (tour === me) tourNext(); }, 7000);
+      });
+    }
+
+    function recenter() { stopFlight(); autoFit = true; fitDirty = true; const f = fitTarget(); if (f) { camTo = f; if (still()) { Object.assign(cam, f); camTo = null; } syncZoom(f); } }
+    const toScreen = (x, y) => ({ x: x * cam.k + cam.x, y: y * cam.k + cam.y });
+
+    /* ----- physics: everything springs toward its place ----- */
+    function spring(o, dt, K) {
+      const c = 2 * Math.sqrt(K);
+      o.vx += ((o.tx - o.x) * K - o.vx * c) * dt;
+      o.vy += ((o.ty - o.y) * K - o.vy * c) * dt;
+      o.x += o.vx * dt; o.y += o.vy * dt;
+    }
+    function kick(cx, cy, repo, power) {
+      for (const G of galaxies.values()) {
+        const own = G.repo === repo;
+        const p = own ? power : power * 0.1;
+        const dxg = G.x - cx, dyg = G.y - cy, dg = Math.hypot(dxg, dyg) || 1;
+        if (!own) { G.vx += dxg / dg * p * 0.35; G.vy += dyg / dg * p * 0.35; }
+        const rot = G.rot.rotation, cr = Math.cos(-rot), sr = Math.sin(-rot);
+        for (const s of G.stars) {
+          const wx = G.x + rotX(s.ux * G.R, s.uy * G.R, G.rot.rotation), wy = G.y + rotY(s.ux * G.R, s.uy * G.R, G.rot.rotation);
+          const dx = wx - cx, dy = wy - cy, d = Math.hypot(dx, dy) || 1;
+          const f = p * 1.3 / (1 + d / 90);
+          const ix = dx / d * f, iy = dy / d * f;
+          s.vx += ix * cr - iy * sr; s.vy += ix * sr + iy * cr;
+        }
+      }
+      const hit = o => { const own = o.data.repo === repo; const dx = o.x - cx, dy = o.y - cy, d = Math.hypot(dx, dy) || 1; if (d < 2) return; const f = (own ? power : power * 0.1) / (1 + d / 120); o.vx += dx / d * f; o.vy += dy / d * f; };
+      for (const n of nodes.values()) hit(n);
+      for (const s of suns.values()) if (!s.hold) hit(s);
+    }
+    // On-screen size: grows with zoom, but never shrinks as fast, so a phone still reads the shapes.
+    const nodeK = k => clamp(0.6 + k * 0.5, 0.62, 1.6);
+    const sunK = k => clamp(0.35 + k * 0.6, 0.45, 1.5);
+    const rotX = (x, y, a) => x * Math.cos(a) - y * Math.sin(a);
+    const rotY = (x, y, a) => x * Math.sin(a) + y * Math.cos(a);
+
+    /* ----- particles (pooled) ----- */
+    function spark(o) {
+      const sp = pool.pop() || new PIXI.Sprite(TEX.dot);
+      sp.anchor.set(0.5); sp.blendMode = "add"; sp.tint = o.color ?? C.ice; sp.alpha = 1; sp.visible = true;
+      fxLayer.addChild(sp);
+      parts.push({ sp, x: o.x, y: o.y, vx: o.vx || 0, vy: o.vy || 0, life: o.life || 1, t: 0, size: o.size || 3, drag: o.drag ?? 1.8, to: o.to || null, from: o.to ? { x: o.x, y: o.y } : null });
+    }
+    function stepParts(dt) {
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.t += dt;
+        const q = p.t / p.life;
+        if (q >= 1) { fxLayer.removeChild(p.sp); if (pool.length < 240) pool.push(p.sp); else p.sp.destroy(); parts.splice(i, 1); continue; }
+        if (p.to) { const e = 1 - Math.pow(1 - q, 3); const tx = typeof p.to === "function" ? p.to() : p.to; p.x = lerp(p.from.x, tx.x, e); p.y = lerp(p.from.y, tx.y, e); p.sp.alpha = q < 0.8 ? 0.9 : (1 - q) * 4.5; }
+        else { p.x += p.vx * dt; p.y += p.vy * dt; const dmp = Math.exp(-p.drag * dt); p.vx *= dmp; p.vy *= dmp; p.sp.alpha = 1 - q; }
+        p.sp.position.set(p.x, p.y);
+        p.sp.scale.set(p.size / 16 * (1 - q * 0.4));
+      }
+    }
+
+    /* ----- filters (only while an effect plays) ----- */
+    function addFilter(f) { filters.add(f); scene.filterArea = app.screen; scene.filters = [...filters]; }
+    function removeFilter(f) { if (!filters.delete(f)) return; scene.filters = filters.size ? [...filters] : null; try { f.destroy(); } catch (e) {} }
+    function shockwave(sx, sy, o) {
+      if (!PIXI.filters || !PIXI.filters.ShockwaveFilter) return;
+      const f = new PIXI.filters.ShockwaveFilter({ center: { x: sx, y: sy }, amplitude: o.amplitude, wavelength: o.wavelength, speed: o.speed, brightness: o.brightness || 1, radius: o.radius || -1 });
+      f.time = 0;
+      addFilter(f);
+      fxBusy++;
+      gsap.to(f, { time: o.duration, duration: o.duration, ease: "none", onComplete: () => { removeFilter(f); fxBusy--; } });
+    }
+    function warp(sx, sy, o) {
+      if (!PIXI.filters || !PIXI.filters.BulgePinchFilter) return null;
+      const f = new PIXI.filters.BulgePinchFilter({ center: { x: sx / W, y: sy / H }, radius: o.radius, strength: 0 });
+      addFilter(f);
+      return f;
+    }
+
+    /* ----- effects ----- */
+    function fx(ev) {
+      fxBusy++;
+      setTimeout(() => { fxBusy--; }, 3200);
+      try {
+        if (ev.type === "bigbang") fxBigBang(ev);
+        else if (ev.type === "rift") fxRift(ev);
+        else if (ev.type === "flare") fxFlare(ev);
+        else if (ev.type === "adopt") fxAdopt(ev);
+        else if (ev.type === "agent" || ev.type === "human") fxWork(ev);
+        else if (ev.type === "comet") fxComet(ev);
+        else if (ev.type === "supernova") fxSupernova(ev);
+        else if (ev.type === "prgone") fxPrGone(ev);
+        else if (ev.type === "close") fxClose(ev);
+        else if (ev.type === "action") fxAction(ev);
+        else if (ev.type === "glow") fxGlow(ev);
+      } catch (e) { console.warn("[universo] efecto", ev.type, e); settle(ev); }
+    }
+    function flash(x, y, size, color, dur, peak = 1) {
+      const sp = new PIXI.Sprite(TEX.glow); sp.anchor.set(0.5); sp.blendMode = "add"; sp.tint = color; sp.alpha = 0; sp.position.set(x, y);
+      fxLayer.addChild(sp);
+      const o = { s: 0.2, a: peak };
+      sp.scale.set(0.01);
+      gsap.timeline({ onComplete: () => sp.destroy() })
+        .to(o, { s: 1, duration: dur * 0.35, ease: "power2.out", onUpdate: () => { sp.scale.set(size * o.s / 64); sp.alpha = o.a; } })
+        .to(o, { a: 0, s: 1.25, duration: dur * 0.65, ease: "power1.in", onUpdate: () => { sp.scale.set(size * o.s / 64); sp.alpha = o.a; } });
+    }
+    function ringWave(x, y, r0, r1, color, dur, width = 2, alpha = 0.8) {
+      const g = new PIXI.Graphics(); g.blendMode = "add"; g.position.set(x, y);
+      fxLayer.addChild(g);
+      const o = { r: r0, a: alpha };
+      gsap.to(o, { r: r1, a: 0, duration: dur, ease: "power2.out", onUpdate: () => { g.clear(); g.circle(0, 0, o.r).stroke({ width: width / cam.k, color, alpha: o.a }); }, onComplete: () => g.destroy() });
+    }
+    function fxBigBang(ev) {
+      const s = suns.get(ev.map);
+      if (!s) return;
+      const repo = s.data.repo;
+      const x = s.tx, y = s.ty;
+      s.x = x; s.y = y; s.vx = s.vy = 0;
+      s.ap = 0; s.hold = true;
+      flash(x, y, 220, C.ice, 1.1);
+      flash(x, y, 520, C.sky, 1.6, 0.55);
+      const sc = toScreen(x, y);
+      shockwave(sc.x, sc.y, { amplitude: 34, wavelength: 190, speed: 720, brightness: 1.25, duration: 1.7 });
+      setTimeout(() => kick(x, y, repo, 900), 60);
+      for (let i = 0; i < 36; i++) { const a = Math.random() * TAU, v = 140 + Math.random() * 260; spark({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.9 + Math.random() * 0.8, size: 2 + Math.random() * 3, color: Math.random() < 0.5 ? C.sky : C.ice, drag: 2.2 }); }
+      const o = { a: 0 };
+      gsap.timeline()
+        .to(o, { a: 1.25, duration: 0.45, ease: "power3.out", onUpdate: () => { s.ap = o.a; } }, 0.08)
+        .to(o, { a: 1, duration: 0.5, ease: "power2.inOut", onUpdate: () => { s.ap = o.a; }, onComplete: () => { s.hold = false; } });
+      s.prog01 = 0;
+      let i = 0;
+      for (const k of ev.kids) {
+        const n = nodes.get(k);
+        if (!n) continue;
+        if (n.hold) {
+          n.x = x; n.y = y; n.vx = n.vy = 0; n.ap = 0;
+          gsap.to(n, { ap: 1, duration: 0.5, delay: 0.55 + i * 0.07, ease: "power2.out", onComplete: () => { n.hold = false; } });
+          i++;
+        }
+      }
+    }
+    function fxRift(ev) {
+      const n = nodes.get(ev.issue);
+      if (!n) return;
+      targetNode(n); n.x = n.tx; n.y = n.ty; n.ap = 0; n.hold = true;
+      const x = n.x, y = n.y, ang = n.h1 * Math.PI;
+      const g = new PIXI.Graphics(); g.blendMode = "add"; g.position.set(x, y); g.rotation = ang;
+      fxLayer.addChild(g);
+      const o = { len: 0, w: 0, a: 1, warp: 0 };
+      const draw = () => {
+        g.clear();
+        const L = o.len, Wd = o.w;
+        if (L < 0.5) return;
+        g.moveTo(-L, 0).quadraticCurveTo(0, -Wd, L, 0).quadraticCurveTo(0, Wd, -L, 0).fill({ color: C.deep, alpha: o.a });
+        g.moveTo(-L, 0).quadraticCurveTo(0, -Wd, L, 0).quadraticCurveTo(0, Wd, -L, 0).stroke({ width: 1.4 / cam.k, color: C.ice, alpha: o.a });
+        g.moveTo(-L * 1.25, 0).lineTo(L * 1.25, 0).stroke({ width: 0.8 / cam.k, color: C.sky, alpha: o.a * 0.6 });
+      };
+      const sc = toScreen(x, y);
+      const wf = warp(sc.x, sc.y, { radius: Math.max(120, 200 * cam.k) });
+      fxBusy++;
+      gsap.timeline({ onComplete: () => { g.destroy(); if (wf) removeFilter(wf); fxBusy--; } })
+        .to(o, { len: 30 / Math.sqrt(cam.k), warp: 0.6, duration: 0.55, ease: "power2.out", onUpdate: () => { draw(); if (wf) wf.strength = -o.warp; } })
+        .to(o, { w: 10 / Math.sqrt(cam.k), duration: 0.35, ease: "back.out(2)", onUpdate: draw })
+        .add(() => {
+          const s2 = toScreen(x, y);
+          shockwave(s2.x, s2.y, { amplitude: 14, wavelength: 80, speed: 260, brightness: 1.15, duration: 0.9 });
+          flash(x, y, 60, C.ice, 0.7);
+          for (let i = 0; i < 12; i++) { const a = ang + (Math.random() < 0.5 ? -1 : 1) * Math.PI / 2 + (Math.random() - 0.5) * 1.2, v = 40 + Math.random() * 70; spark({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7 + Math.random() * 0.5, size: 1.6 + Math.random() * 1.6, color: C.ice }); }
+          gsap.to(n, { ap: 1, duration: 0.6, ease: "back.out(2.2)", onComplete: () => { n.hold = false; } });
+        })
+        .to(o, { warp: 0, duration: 0.7, ease: "power2.inOut", onUpdate: () => { if (wf) wf.strength = -o.warp; } }, ">")
+        .to(o, { w: 0, len: 0, a: 0, duration: 0.6, ease: "power2.in", onUpdate: draw }, "<0.15");
+    }
+    function fxFlare(ev) {
+      const n = nodes.get(ev.issue);
+      const s = suns.get(ev.map);
+      if (!n) return;
+      targetNode(n); n.x = n.tx; n.y = n.ty; n.ap = 0; n.hold = true;
+      if (s) {
+        gsap.fromTo(s, { flare: 0 }, { flare: 1, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 });
+        const a0 = Math.atan2(n.ty - s.y, n.tx - s.x);
+        for (let i = 0; i < 14; i++) {
+          const a = a0 + (Math.random() - 0.5) * 0.7, v = 90 + Math.random() * 110;
+          spark({ x: s.x + Math.cos(a) * s.r, y: s.y + Math.sin(a) * s.r, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.55 + Math.random() * 0.4, size: 2 + Math.random() * 2.2, color: i % 3 ? C.sky : C.ice, drag: 2.6 });
+        }
+      }
+      setTimeout(() => {
+        for (let i = 0; i < 10; i++) {
+          const a = Math.random() * TAU, r = 14 + Math.random() * 10;
+          spark({ x: n.x + Math.cos(a) * r, y: n.y + Math.sin(a) * r, to: () => ({ x: n.x, y: n.y }), life: 0.5 + Math.random() * 0.2, size: 1.6 + Math.random() * 1.4, color: C.ice });
+        }
+        gsap.to(n, { ap: 1, duration: 0.5, delay: 0.4, ease: "back.out(2)", onComplete: () => { n.hold = false; } });
+      }, still() ? 0 : 380);
+    }
+    function fxAdopt(ev) {
+      const n = nodes.get(ev.issue);
+      if (!n) return;
+      n.travel = { t: 0, fx: n.x, fy: n.y, side: n.h1 < 0.5 ? -1 : 1 };
+      n.hist = [];
+      gsap.to(n.travel, { t: 1, duration: 2.4, ease: "power2.inOut", onComplete: () => { n.travel = null; setTimeout(() => { n.hist = null; }, 700); } });
+    }
+    function fxWork(ev) {
+      const n = nodes.get(ev.issue);
+      if (!n) return;
+      const col = ev.type === "agent" ? C.agent : C.human;
+      ringWave(n.x, n.y, 6, 34, col, 1.1, 1.5);
+      setTimeout(() => n.dying || ringWave(n.x, n.y, 6, 26, col, 0.9, 1.2, 0.5), 300);
+    }
+    function trailPath(t) {
+      // Issue -> its sun; or across the repo's galaxy when it closes nothing in sight.
+      const p = t.pr;
+      const n = p.closes.map(k => nodes.get(k)).find(Boolean);
+      const G = galaxies.get(p.repo);
+      if (n && n.sun) return { a: { x: n.x, y: n.y }, b: { x: n.sun.x, y: n.sun.y }, bend: (t.h < 0.5 ? -1 : 1) * 0.28, min: 90 };
+      if (n && G) return { a: { x: n.x, y: n.y }, b: { x: G.x, y: G.y }, bend: (t.h < 0.5 ? -1 : 1) * 0.22, min: 70 };
+      if (!G) return null;
+      const ang = t.h * TAU, R = G.R * 0.62;
+      return { a: { x: G.x + Math.cos(ang) * R, y: G.y + Math.sin(ang) * R }, b: { x: G.x - Math.cos(ang + 0.5) * R, y: G.y - Math.sin(ang + 0.5) * R }, bend: 0.18 };
+    }
+    function qpt(path, u) {
+      const { a, b, bend } = path;
+      // The bend never drops below path.min world units, so a short hop still reads as an arc.
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const off = Math.sign(bend || 1) * Math.max(len * Math.abs(bend), path.min || 0) / len;
+      const mx = (a.x + b.x) / 2 - (b.y - a.y) * off, my = (a.y + b.y) / 2 + (b.x - a.x) * off;
+      const v = 1 - u;
+      return { x: v * v * a.x + 2 * v * u * mx + u * u * b.x, y: v * v * a.y + 2 * v * u * my + u * u * b.y };
+    }
+    function fxComet(ev) {
+      const t = trails.get(ev.pr);
+      if (!t) return;
+      t.prog = 0; t.alpha = 0.5;
+      const head = new PIXI.Sprite(TEX.glow); head.anchor.set(0.5); head.blendMode = "add"; head.tint = C.ice;
+      const core = new PIXI.Sprite(TEX.dot); core.anchor.set(0.5); core.blendMode = "add"; core.tint = C.ice;
+      fxLayer.addChild(head, core);
+      t.head = { head, core };
+      gsap.to(t, {
+        prog: 1, duration: 1.7, ease: "power1.inOut",
+        onUpdate: () => {
+          const path = trailPath(t);
+          if (!path) return;
+          const p = qpt(path, t.prog);
+          head.position.set(p.x, p.y); core.position.set(p.x, p.y);
+          head.scale.set(40 / 64 / Math.sqrt(cam.k)); core.scale.set(7 / 16 / Math.sqrt(cam.k));
+          if (Math.random() < 0.6) spark({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, life: 0.6, size: 1.6, color: C.sky, drag: 3 });
+        },
+        onComplete: () => {
+          const path = trailPath(t);
+          if (path) flash(path.b.x, path.b.y, 50, C.sky, 0.6, 0.7);
+          head.destroy(); core.destroy(); t.head = null;
+          const p = latest.prs.get(ev.pr);
+          if (p) for (const k of p.closes) heldState.delete(k);
+          refresh(false);
+        },
+      });
+    }
+    function fxSupernova(ev) {
+      const list = ev.issues.map(k => nodes.get(k)).filter(Boolean);
+      const t = trails.get(ev.pr);
+      list.forEach((n, i) => {
+        setTimeout(() => {
+          const x = n.x, y = n.y;
+          flash(x, y, 120, C.ice, 1, 1);
+          flash(x, y, 260, C.sky, 1.4, 0.5);
+          ringWave(x, y, 4, 70, C.sky, 1.3, 2);
+          const sc = toScreen(x, y);
+          shockwave(sc.x, sc.y, { amplitude: 16, wavelength: 80, speed: 320, brightness: 1.2, duration: 1 });
+          for (let j = 0; j < 26; j++) { const a = Math.random() * TAU, v = 60 + Math.random() * 160; spark({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7 + Math.random() * 0.7, size: 1.6 + Math.random() * 2.4, color: j % 3 ? C.sky : C.ice, drag: 2 }); }
+        }, i * 260);
+      });
+      setTimeout(() => {
+        for (const k of ev.issues) heldState.delete(k);
+        refresh(false);
+        for (const k of ev.issues) { const n = nodes.get(k); if (n && ghostIssues.has(k)) { ghostIssues.delete(k); } }
+        setTimeout(() => { for (const k of ev.issues) ghostIssues.delete(k); refresh(false); }, 900);
+      }, 320 + list.length * 260);
+      setTimeout(() => { ghostPrs.delete(ev.pr); refresh(false); }, 500);
+      void t;
+    }
+    function fxPrGone(ev) { ghostPrs.delete(ev.pr); refresh(false); }
+    function fxClose(ev) {
+      const n = nodes.get(ev.issue);
+      heldState.delete(ev.issue);
+      if (n) ringWave(n.x, n.y, 5, 22, C.ice, 0.8, 1.2, 0.5);
+      setTimeout(() => { ghostIssues.delete(ev.issue); refresh(false); }, 600);
+      refresh(false);
+    }
+    function fxAction(ev) {
+      const G = galaxies.get(ev.repo);
+      if (!G) return;
+      const o = { p: 0 };
+      gsap.timeline()
+        .to(o, { p: 1, duration: 0.42, ease: "sine.inOut", yoyo: true, repeat: 5, onUpdate: () => { G.pulse = o.p; } })
+        .add(() => {
+          G.pulse = 0;
+          const col = ev.ok ? C.ok : C.fail;
+          G.flashTint = col;
+          const f = { a: 1 };
+          gsap.to(f, { a: 0, duration: 1.6, ease: "power2.out", onUpdate: () => { G.flashA = f.a; }, onComplete: () => { G.flashTint = null; G.flashA = 0; } });
+          ringWave(G.x, G.y, G.R * 0.25, G.R * 1.25, col, 1.5, 2.5, 0.7);
+        });
+    }
+    function fxGlow(ev) {
+      const G = galaxies.get(ev.repo);
+      if (G) ringWave(G.x, G.y, G.R * 0.1, G.R * 0.7, C.agent, 1.6, 1.5, 0.35);
+    }
+
+    /* ----- frame ----- */
+    function tick(ticker) {
+      const now = performance.now();
+      const dt = Math.min(0.05, lastNow ? (now - lastNow) / 1000 : 0.016);
+      lastNow = now;
+      if (window.gsap) gsap.updateRoot(now / 1000);
+      pump(now);
+      const calm = still();
+      if (!calm) T += dt;
+      if (introA < 1) introA = Math.min(1, introA + dt / 1.2);
+      world.alpha = introA;
+      const K = calm ? 0 : 7;
+      hlA += ((hlT ? 1 : 0) - hlA) * (1 - Math.exp(-dt / 0.06));
+      if (hlA < 0.002 && !hlT) { hlA = 0; hl = null; }
+      else if (hlT) hl = resolveHl(hlT);
+      const dimF = 1 - 0.7 * hlA;
+      const isG = G => !hl || hl.gals.has(G);
+
+      // camera
+      if (autoFit && fitDirty) { const f = fitTarget(); if (f) { camTo = f; syncZoom(f); } fitDirty = false; }
+      if (camTo) {
+        const f = calm ? 1 : 1 - Math.exp(-dt / 0.35);
+        cam.x += (camTo.x - cam.x) * f; cam.y += (camTo.y - cam.y) * f; cam.k += (camTo.k - cam.k) * f;
+        if (Math.abs(camTo.x - cam.x) < 0.3 && Math.abs(camTo.y - cam.y) < 0.3 && Math.abs(camTo.k - cam.k) < 0.001) { Object.assign(cam, camTo); camTo = null; }
+      }
+      world.position.set(cam.x, cam.y);
+      world.scale.set(cam.k);
+      const k = cam.k;
+
+      // dust
+      for (const d of dust) {
+        const tw = W * 1.3, th = H * 1.3;
+        d.sp.x = (((d.u * tw + cam.x * d.p) % tw) + tw) % tw - W * 0.15;
+        d.sp.y = (((d.v * th + cam.y * d.p) % th) + th) % th - H * 0.15;
+        d.sp.alpha = d.a * (calm ? 1 : 0.75 + 0.25 * Math.sin(T * d.ts + d.tw)) * (1 - 0.5 * hlA);
+      }
+
+      // galaxies
+      const wall = Date.now();
+      for (const G of galaxies.values()) {
+        if (K) spring(G, dt, 3.2); else { G.x = G.tx; G.y = G.ty; }
+        G.R += (G.Rt - G.R) * (calm ? 1 : 1 - Math.exp(-dt / 0.6));
+        if (!calm) G.rot.rotation = G.spin + T * TAU / 900;
+        G.rot.position.set(G.x, G.y);
+        const lit = (litRepos.get(G.repo) || 0) > wall ? 1 : 0;
+        G.lit += (lit - G.lit) * Math.min(1, dt * 1.5);
+        const breathe = calm ? 0 : Math.sin(T * 1.3) * 0.5 + 0.5;
+        G.halo.position.set(G.x, G.y); G.halo.scale.set(G.R * 2.7 / 256);
+        G.halo.alpha = 0.16 + G.pulse * 0.16 + G.lit * (0.06 + breathe * 0.06);
+        G.core.position.set(G.x, G.y); G.core.scale.set(G.R * 0.75 / 64 * (1 + G.pulse * 0.25));
+        G.core.alpha = 0.22 + G.pulse * 0.45 + G.lit * (0.12 + breathe * 0.12);
+        if (G.flashTint != null) { G.core.tint = G.flashTint; G.halo.tint = G.flashTint; G.core.alpha += G.flashA * 0.7; G.halo.alpha += G.flashA * 0.25; }
+        else { G.core.tint = C.sky; G.halo.tint = C.blue; }
+        const gf = isG(G) ? 1 + hlA * 0.35 : dimF;
+        G.halo.alpha *= gf; G.core.alpha *= gf; G.rot.alpha = isG(G) ? 1 : dimF;
+        for (const s of G.stars) {
+          if (s.vx || s.vy || s.dx || s.dy) {
+            if (calm) { s.dx = s.dy = s.vx = s.vy = 0; }
+            else {
+              s.vx += (-s.dx * 5 - s.vx * 4.4) * dt; s.vy += (-s.dy * 5 - s.vy * 4.4) * dt;
+              s.dx += s.vx * dt; s.dy += s.vy * dt;
+              if (Math.abs(s.dx) + Math.abs(s.dy) + Math.abs(s.vx) + Math.abs(s.vy) < 0.05) s.dx = s.dy = s.vx = s.vy = 0;
+            }
+          }
+          s.sp.position.set(s.ux * G.R + s.dx, s.uy * G.R + s.dy);
+        }
+        for (const p of G.puffs) { p.sp.position.set(p.ux * G.R, p.uy * G.R); p.sp.scale.set(G.R * p.s * 2 / 256 * 1.6); }
+        // gas: one reddish cloud wrapping every orphan of this repo
+        const ga = G.gas;
+        if (ga.base) {
+          const on = !!G.cloud;
+          if (on) { ga.base.position.set(G.x + G.cloud.x, G.y + G.cloud.y); ga.base.scale.set((G.cloud.r * 2.9) / 256); }
+          ga.base.baseA = (ga.base.baseA ?? 0) + ((on ? 0.17 : 0) - (ga.base.baseA ?? 0)) * Math.min(1, dt * 1.2);
+          ga.base.alpha = ga.base.baseA * (isG(G) ? 1 + hlA * 0.6 : dimF);
+          if (!on && ga.base.baseA < 0.005) { ga.base.destroy(); ga.base = null; }
+        }
+        for (const [key, b] of ga.blobs) {
+          const n = nodes.get(key);
+          if (n) { b.x += (n.x - b.x) * Math.min(1, dt * 0.9); b.y += (n.y - b.y) * Math.min(1, dt * 0.9); }
+          b.a += ((b.on ? 0.12 : 0) - b.a) * Math.min(1, dt * 0.8);
+          const wob = calm ? 1 : 1 + Math.sin(T * 0.4 + b.h * TAU) * 0.08;
+          b.sp.position.set(b.x + (calm ? 0 : Math.sin(T * 0.21 + b.h * 9) * 4), b.y + (calm ? 0 : Math.cos(T * 0.17 + b.h * 7) * 4));
+          b.sp.scale.set(92 * wob / 256); b.sp.alpha = b.a * (isG(G) ? 1 + hlA * 0.6 : dimF);
+          if (!b.on && b.a < 0.004) { b.sp.destroy(); ga.blobs.delete(key); }
+        }
+      }
+
+      // suns
+      const sunSc = sunK(k) / k;
+      for (const [key, s] of suns) {
+        targetSun(s);
+        if (K && !s.hold) spring(s, dt, K); else if (!s.hold) { s.x = s.tx; s.y = s.ty; }
+        if (!s.hold) s.ap += (s.apTo - s.ap) * (calm ? 1 : Math.min(1, dt * 3));
+        if (s.dying && s.ap < 0.02) { destroySun(s); suns.delete(key); continue; }
+        const a = clamp(s.ap, 0, 1.4);
+        const breathe = calm ? 1 : 1 + Math.sin(T * 0.9 + s.h1 * TAU) * 0.04;
+        s.glow.position.set(s.x, s.y); s.glow.scale.set(s.r * 7 * sunSc / 64 * breathe * a * (1 + s.flare * 0.35)); s.glow.alpha = 0.55 * Math.min(1, a);
+        s.corona.position.set(s.x, s.y); s.corona.scale.set(s.r * 2.6 * sunSc / 64 * a * (1 + s.flare * 0.6)); s.corona.alpha = 0.5 * Math.min(1, a) + s.flare * 0.4;
+        s.body.position.set(s.x, s.y); s.body.scale.set(sunSc * a); s.body.alpha = Math.min(1, a);
+        if (s.bodyR !== s.r) { s.bodyR = s.r; drawSun(s); }
+        if (!s.hold) s.prog01 += (s.progTo - s.prog01) * (calm ? 1 : Math.min(1, dt * 2.2));
+        if (Math.abs(s.prog01 - s.progDrawn) > 0.002) drawProg(s);
+        s.prog.position.set(s.x, s.y); s.prog.scale.set(sunSc * a); s.prog.alpha = Math.min(1, a);
+        s.orbit.position.set(s.x, s.y); s.orbit.alpha = Math.min(1, a);
+        if (hl && !hl.suns.has(s)) for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= dimF;
+      }
+
+      // issues
+      const sc = nodeK(k) / k;
+      for (const [key, n] of nodes) {
+        targetNode(n);
+        if (n.travel) {
+          const tr = n.travel, u = tr.t;
+          const mx = (tr.fx + n.tx) / 2 - (n.ty - tr.fy) * 0.25 * tr.side, my = (tr.fy + n.ty) / 2 + (n.tx - tr.fx) * 0.25 * tr.side;
+          const v = 1 - u;
+          n.x = v * v * tr.fx + 2 * v * u * mx + u * u * n.tx; n.y = v * v * tr.fy + 2 * v * u * my + u * u * n.ty; n.vx = n.vy = 0;
+        } else if (K) spring(n, dt, K); else { n.x = n.tx; n.y = n.ty; }
+        if (n.hist) { n.hist.push(n.x, n.y); if (n.hist.length > 60) n.hist.splice(0, 2); }
+        if (!n.hold) n.ap += (n.apTo - n.ap) * (calm ? 1 : Math.min(1, dt * (n.dying ? 2 : 3)));
+        if (n.dying && n.ap < 0.02) { destroyNode(n); nodes.delete(key); continue; }
+        const a = clamp(n.ap, 0, 1.4), al = Math.min(1, a);
+        const w = n.work && (n.work.label || wall - n.work.at < WORK_TTL) ? n.work : null;
+        const beat = w && !calm ? 0.5 + 0.5 * Math.sin(T * 2.4 + n.h1 * TAU) : 0;
+        n.body.position.set(n.x, n.y); n.body.scale.set(sc * a * (1 + beat * 0.12)); n.body.alpha = al;
+        n.glow.position.set(n.x, n.y); n.glow.scale.set(n.glowS * sc * a * (1 + beat * 0.5)); n.glow.alpha = (n.glowA + beat * 0.25 + (w ? 0.15 : 0)) * al;
+        if (n.ping > 0) { n.ping = Math.max(0, n.ping - dt); n.glow.alpha += n.ping * 0.5; }
+        // satellite: someone is working on it
+        n.satA += ((w ? 1 : 0) - n.satA) * Math.min(1, dt * 1.5);
+        if (n.satA > 0.01) {
+          const col = w ? (w.kind === "agent" ? C.agent : C.human) : n.sat.tint;
+          const ang = calm ? -0.8 : T * (w && w.kind === "agent" ? 2.6 : 1.7) + n.h2 * TAU;
+          const rr = 11 * sc;
+          n.sat.tint = col; n.satGlow.tint = col;
+          n.sat.position.set(n.x + Math.cos(ang) * rr, n.y + Math.sin(ang) * rr * 0.75); n.sat.scale.set(3.2 * sc / 16); n.sat.alpha = n.satA * al;
+          n.satGlow.position.set(n.sat.x, n.sat.y); n.satGlow.scale.set(12 * sc / 64); n.satGlow.alpha = n.satA * 0.6 * al;
+        } else { n.sat.alpha = 0; n.satGlow.alpha = 0; }
+        if (hl && !hl.nodes.has(n)) for (const o of [n.body, n.glow, n.sat, n.satGlow]) o.alpha *= dimF;
+        else if (hl) n.glow.alpha += hlA * 0.25;
+        if (w && !n.label) { n.label = document.createElement("span"); n.label.className = "lab lab-work"; $labels.appendChild(n.label); }
+        if (n.label) {
+          if (!w && n.satA < 0.05) { n.label.remove(); n.label = null; }
+          else {
+            n.label.className = "lab lab-work" + (w && w.kind === "human" ? " human" : "");
+            const txt = `#${n.data.number} <i>${w ? (w.kind === "agent" ? "agente" : "persona") : ""}</i>`;
+            if (n.label._t !== txt) { n.label.innerHTML = txt; n.label._t = txt; }
+          }
+        }
+      }
+
+      // trails, cross-repo curves
+      drawDyn(dt, k, dimF);
+      drawHl(k, calm);
+      stepParts(dt);
+      placeLabels(k);
+      if (mouse) { const h = pickAt(mouse.x, mouse.y); if (h !== hover) setHover(h); }
+      if (tipFor) placeTip();
+      app.ticker.maxFPS = (fxBusy > 0 || parts.length || camTo || filters.size || hl) ? 60 : 30;
+    }
+
+    function drawDyn(dt, k, dimF) {
+      dyn.clear();
+      // A child in another repo: a long thin curve to its sun.
+      for (const n of nodes.values()) {
+        if (n.role !== "foreign" || !n.sun) continue;
+        const a = Math.min(n.ap, n.sun.ap, 1);
+        if (a < 0.02) continue;
+        const path = { a: { x: n.x, y: n.y }, b: { x: n.sun.x, y: n.sun.y }, bend: (n.h1 < 0.5 ? -1 : 1) * 0.16 };
+        const m = qpt(path, 0.5);
+        const mx = 2 * m.x - (path.a.x + path.b.x) / 2, my = 2 * m.y - (path.a.y + path.b.y) / 2;
+        const lit = hl && hl.nodes.has(n) && hl.suns.has(n.sun);
+        const lf = !hl ? 1 : lit ? 1 + hlA * 2.2 : dimF;
+        dyn.moveTo(path.a.x, path.a.y).quadraticCurveTo(mx, my, path.b.x, path.b.y).stroke({ width: (0.9 + (lit ? hlA * 0.8 : 0)) / k, color: C.sky, alpha: Math.min(1, 0.24 * a * lf) });
+      }
+      // Adoption path, fading behind the traveller
+      for (const n of nodes.values()) {
+        if (!n.hist || n.hist.length < 4) continue;
+        const h = n.hist, cnt = h.length / 2;
+        for (let i = 1; i < cnt; i++) dyn.moveTo(h[i * 2 - 2], h[i * 2 - 1]).lineTo(h[i * 2], h[i * 2 + 1]).stroke({ width: (0.6 + 1.6 * i / cnt) / k, color: C.ice, alpha: 0.35 * i / cnt });
+        if (!n.travel) h.splice(0, 4);
+      }
+      // PR trails: tapered, they stay while the PR is open.
+      for (const [key, t] of trails) {
+        t.alpha += (t.aTo - t.alpha) * Math.min(1, dt * (t.dying ? 1.2 : 2));
+        if (t.dying && t.alpha < 0.01) { if (t.head) { t.head.head.destroy(); t.head.core.destroy(); } gsap.killTweensOf(t); trails.delete(key); continue; }
+        const path = trailPath(t);
+        if (!path || t.prog <= 0.001) continue;
+        const N = 26, end = t.prog;
+        const lit = hl && hl.trails.has(t);
+        const lf = !hl ? 1 : lit ? 1 + hlA * 0.9 : dimF;
+        let prev = qpt(path, 0);
+        for (let i = 1; i <= N; i++) {
+          const u = end * i / N, p = qpt(path, u);
+          const q = i / N;
+          // Brightest at the head while it travels; once landed the trail reads issue -> sun.
+          const f = t.head ? q : 0.35 + 0.65 * (1 - Math.abs(q - 0.5) * 1.2);
+          dyn.moveTo(prev.x, prev.y).lineTo(p.x, p.y).stroke({ width: (0.6 + 2.2 * f) / Math.max(0.5, k), color: i > N - 4 && t.head ? C.ice : C.blueText, alpha: Math.min(1, t.alpha * (0.15 + 0.55 * f) * lf) });
+          prev = p;
+        }
+      }
+    }
+
+    /* ----- highlight from the log ----- */
+    const isLitG = G => !hl || hl.gals.has(G);
+    function resolveHl(t) {
+      const r = { nodes: new Set(), suns: new Set(), gals: new Set(), trails: new Set(), ringGals: new Set() };
+      const fallback = new Set();
+      for (const k of t.issues) {
+        const n = nodes.get(k);
+        if (n && !n.dying) { r.nodes.add(n); continue; }
+        // Gone from the sky (closed orphan, not loaded): light its sun, else its galaxy.
+        const i = latest.issues.get(k) || ghostIssues.get(k);
+        const s = i && i.map ? suns.get(i.map) : null;
+        if (s && !s.dying) r.suns.add(s); else fallback.add(k.split("#")[0]);
+      }
+      for (const k of t.maps) { const s = suns.get(k); if (s && !s.dying) r.suns.add(s); else fallback.add(k.split("#")[0]); }
+      for (const k of t.prs) { const tr = trails.get(k); if (tr && !tr.dying) r.trails.add(tr); }
+      for (const repo of [...t.repos, ...fallback]) { const G = galaxies.get(repo); if (G) r.gals.add(G); }
+      // A galaxy gets the ring only when nothing more precise in it is left to light.
+      for (const G of r.gals) {
+        const has = [...r.nodes].some(n => n.data.repo === G.repo) || [...r.suns].some(s => s.data.repo === G.repo) || [...r.trails].some(tr => tr.pr.repo === G.repo);
+        if (!has) r.ringGals.add(G);
+      }
+      return r;
+    }
+    function drawHl(k, calm) {
+      hlG.clear();
+      const pts = [];
+      if (hl && hlA > 0.01) {
+        const pulse = calm ? 0.5 : 0.5 + 0.5 * Math.sin(performance.now() / 1000 * 3.2);
+        const st = (x, y, r, w) => { hlG.circle(x, y, r).stroke({ width: w / k, color: C.ice, alpha: 0.75 * hlA }); hlG.circle(x, y, r + (3 + pulse * 5) / k).stroke({ width: 1 / k, color: C.sky, alpha: (0.5 - pulse * 0.35) * hlA }); };
+        for (const n of hl.nodes) { st(n.x, n.y, (5 * nodeK(k) + 6) / k, 1.5); pts.push(n); }
+        for (const s of hl.suns) { st(s.x, s.y, (s.r * sunK(k) + 12) / k, 1.5); pts.push(s); }
+        for (const G of hl.ringGals) { st(G.x, G.y, G.R * 0.92, 1.5); pts.push(G); }
+      }
+      placeArrows(pts);
+    }
+    // A target off screen gets a small pointer on the edge, aimed at it.
+    function placeArrows(pts) {
+      const m = 28;
+      let used = 0;
+      for (const o of pts) {
+        if (used >= 4) break;
+        const p = toScreen(o.x, o.y);
+        if (p.x >= m && p.x <= W - m && p.y >= m && p.y <= H - m) continue;
+        let el = arrows[used];
+        if (!el) { el = document.createElement("span"); el.className = "hl-arrow"; el.setAttribute("aria-hidden", "true"); el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>`; $labels.appendChild(el); arrows[used] = el; }
+        const cx = W / 2, cy = H / 2, ang = Math.atan2(p.y - cy, p.x - cx);
+        const x = clamp(p.x, m, W - m), y = clamp(p.y, m, H - m);
+        el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) rotate(${ang}rad)`;
+        el.style.opacity = String(hlA);
+        used++;
+      }
+      for (let i = used; i < arrows.length; i++) arrows[i].style.opacity = "0";
+    }
+
+    /* ----- labels over the canvas ----- */
+    function placeLabels(k) {
+      // The chrome (brand, tools, log, demo panel) is off limits for titles.
+      const ur = $u.getBoundingClientRect();
+      const boxes = [];
+      for (const el of chrome) {
+        if (el.hidden || !el.offsetWidth) continue;
+        const r = el.getBoundingClientRect();
+        boxes.push({ x0: r.left - ur.left - 4, x1: r.right - ur.left + 4, y0: r.top - ur.top - 4, y1: r.bottom - ur.top + 4 });
+      }
+
+      const nChrome = boxes.length;
+      for (const G of galaxies.values()) {
+        const p = toScreen(G.x, G.y - G.R * 0.98);
+        const lw = G.label.offsetWidth || 120;
+        const x = clamp(p.x - lw / 2, 8, W - lw - 8), y = Math.max(8, p.y - 30);
+        G.label.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        const gb = { x0: x, x1: x + lw, y0: y, y1: y + 26 };
+        const under = boxes.slice(0, nChrome).some(o => gb.x0 < o.x1 && gb.x1 > o.x0 && gb.y0 < o.y1 && gb.y1 > o.y0);
+        G.label.style.opacity = under ? "0" : String(Math.min(1, introA * 1.4) * (isLitG(G) ? 1 : 1 - 0.65 * hlA));
+        if (!under) boxes.push(gb);
+      }
+
+      // Suns are obstacles too: a title never covers another sun.
+      const discs = [...suns.values()].filter(s => !s.dying && s.ap > 0.3).map(s => { const p = toScreen(s.x, s.y), r = s.r * sunK(k) + 6; return { s, x0: p.x - r, x1: p.x + r, y0: p.y - r, y1: p.y + r }; });
+      const order = [...suns.values()].sort((a, b) => b.total - a.total);
+      for (const s of order) {
+        const el = s.label;
+        const a = Math.min(1, s.ap) * introA;
+        const p = toScreen(s.x, s.y);
+        const sr = s.r * sunK(k);
+        const outer = s.rings.length ? s.rings[s.rings.length - 1] * k : 0;
+        const w = el.offsetWidth || 120, h = el.offsetHeight || 34;
+        const x = p.x - w / 2, y = p.y + Math.max(sr + 12, outer + 6);
+        const box = { x0: x, x1: x + w, y0: y, y1: y + h };
+        const hitBox = o => box.x0 < o.x1 && box.x1 > o.x0 && box.y0 < o.y1 && box.y1 > o.y0;
+        const clash = boxes.some(hitBox) || discs.some(o => o.s !== s && hitBox(o));
+        const show = !s.dying && a > 0.3 && !clash && k > 0.22;
+        if (show) boxes.push(box);
+        el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        el.classList.toggle("off", !show);
+        el.style.opacity = show && hl ? String(hl.suns.has(s) ? 1 : 1 - 0.65 * hlA) : "";
+        el.style.visibility = show || el.style.opacity !== "0" ? "" : "hidden";
+      }
+      for (const n of nodes.values()) {
+        if (!n.label) continue;
+        const p = toScreen(n.x, n.y);
+        const off = 9 * nodeK(k);
+        n.label.style.transform = `translate(${Math.round(p.x + off + 6)}px, ${Math.round(p.y - 7)}px)`;
+        n.label.style.opacity = String(Math.min(1, n.satA * 1.2) * (!hl || hl.nodes.has(n) ? 1 : 1 - 0.65 * hlA));
+      }
+    }
+
+    /* ----- hover / tooltip ----- */
+    function pickAt(mx, my) {
+      let best = null, bd = Infinity;
+      const k = cam.k;
+      const sr = 5 * nodeK(k);
+      for (const n of nodes.values()) {
+        if (n.dying || n.ap < 0.5) continue;
+        const p = toScreen(n.x, n.y), d = Math.hypot(p.x - mx, p.y - my);
+        if (d <= sr + 9 && d < bd) { bd = d; best = n; }
+      }
+      for (const s of suns.values()) {
+        if (s.dying || s.ap < 0.5) continue;
+        const p = toScreen(s.x, s.y), d = Math.hypot(p.x - mx, p.y - my);
+        if (d <= s.r * sunK(k) + 8 && d < bd) { bd = d; best = s; }
+      }
+      return best;
+    }
+    function setHover(n) { hover = n; showTip(); }
+    function showTip() {
+      const n = hover || selected;
+      if (!n) { $tip.classList.remove("on"); $hit.hidden = true; tipFor = null; return; }
+      const touch = !hover;
+      const isSun = suns.get(n.key) === n;
+      const d = n.data;
+      if (tipFor !== n || $tip.classList.contains("touch") !== touch || $tip._state !== (isSun ? n.done + "/" + n.total : d.state + (n.work ? n.work.kind : ""))) {
+        tipFor = n;
+        $tip._state = isSun ? n.done + "/" + n.total : d.state + (n.work ? n.work.kind : "");
+        const map = !isSun && d.map ? suns.get(d.map) : null;
+        const state = isSun ? `<span class="chip"><span class="g g-sun" aria-hidden="true"></span>Mapa · ${n.done} de ${n.total} hechos</span>` : `<span class="chip"><span class="g g-${d.state === "done" ? "todo" : d.state}" aria-hidden="true"></span>${STATE_LABEL[d.state]}${n.work ? (n.work.kind === "agent" ? " · un agente trabaja" : " · alguien trabaja") : ""}</span>`;
+        $tip.innerHTML = `<span class="tip-ref">${esc(d.repo)} <b>#${d.number}</b>${map ? ` · ${esc(map.data.title)}` : ""}</span>
+          <span class="tip-title">${esc(d.title)}</span>
+          <span class="tip-foot">${state}${touch ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Abrir en GitHub</a>` : ""}</span>`;
+        $tip.classList.toggle("touch", touch);
+        $tip.tw = $tip.offsetWidth; $tip.th = $tip.offsetHeight;
+        $hit.href = d.url;
+        $hit.setAttribute("aria-label", `${d.repo} #${d.number}: ${d.title}`);
+      }
+      $hit.hidden = touch;
+      $tip.classList.add("on");
+      placeTip();
+    }
+    function placeTip() {
+      const n = tipFor;
+      if (!n) return;
+      const isSun = suns.get(n.key) === n;
+      const p = toScreen(n.x, n.y);
+      const r = isSun ? n.r * sunK(cam.k) : 5 * nodeK(cam.k);
+      const tw = $tip.tw || 220, th = $tip.th || 70;
+      let x = clamp(p.x - tw / 2, 8, Math.max(8, W - tw - 8));
+      let y = p.y - r - 14 - th;
+      if (y < 8) y = p.y + r + 14;
+      $tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+      if (!$hit.hidden) {
+        const d = Math.max(28, r * 2 + 12);
+        $hit.style.width = $hit.style.height = d + "px";
+        $hit.style.transform = `translate(${p.x - d / 2}px, ${p.y - d / 2}px)`;
+      }
+    }
+
+    /* ----- input: d3.zoom for pan / pinch / wheel ----- */
+    function bindInput() {
+      const blocked = t => t && t.closest && t.closest(".tools, .log, .demo, .tip, .notice, .search, .lab, .hit, button, a");
+      zoom = d3.zoom()
+        .scaleExtent([0.06, 4])
+        .clickDistance(5)
+        .filter(ev => !blocked(ev.target) && (!ev.ctrlKey || ev.type === "wheel") && !ev.button)
+        .on("zoom", ev => {
+          if (!ev.sourceEvent) return;
+          stopFlight();
+          autoFit = false; camTo = null;
+          cam.x = ev.transform.x; cam.y = ev.transform.y; cam.k = ev.transform.k;
+          if (selected) { selected = null; showTip(); }
+        });
+      zsel = d3.select($u);
+      zsel.call(zoom).on("dblclick.zoom", null);
+      const local = e => { const r = $u.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+      $u.addEventListener("pointermove", e => {
+        if (e.pointerType !== "mouse") return;
+        if (blocked(e.target) && e.target !== $hit) { mouse = null; if (hover) setHover(null); return; }
+        mouse = local(e);
+      });
+      $u.addEventListener("pointerleave", () => { mouse = null; if (hover) setHover(null); });
+      let down = null;
+      $u.addEventListener("pointerdown", e => { down = local(e); }, true);
+      $u.addEventListener("pointerup", e => {
+        if (e.pointerType === "mouse" || blocked(e.target)) return;
+        const p = local(e);
+        if (!down || Math.hypot(p.x - down.x, p.y - down.y) > 8) return;
+        const n = pickAt(p.x, p.y);
+        if (n || selected) { selected = n; hover = null; showTip(); }
+      });
+    }
+    function keyPan(dx, dy, kf) {
+      stopFlight();
+      const t = { x: cam.x + dx, y: cam.y + dy, k: cam.k };
+      if (kf) { const k2 = clamp(cam.k * kf, 0.06, 4); t.x = W / 2 - (W / 2 - cam.x) / cam.k * k2; t.y = H / 2 - (H / 2 - cam.y) / cam.k * k2; t.k = k2; }
+      autoFit = false; camTo = null; Object.assign(cam, t); syncZoom(t);
+    }
+
+    return {
+      init,
+      ready: () => ok,
+      refresh,
+      fx,
+      recenter,
+      keyPan,
+      closeTip: () => { selected = null; hover = null; showTip(); },
+      travel,
+      needsTravel,
+      travelForEvent,
+      tourStart,
+      tourStop,
+      touring: () => !!tour,
+      searchables: () => {
+        const out = [];
+        for (const s of suns.values()) if (!s.dying && s.ap > 0.3) out.push({ key: s.key, kind: "map", repo: s.data.repo, number: s.data.number, title: s.data.title, state: "map" });
+        for (const n of nodes.values()) if (!n.dying && n.ap > 0.3) out.push({ key: n.key, kind: "issue", repo: n.data.repo, number: n.data.number, title: n.data.title, state: n.data.state });
+        return out;
+      },
+      highlight: t => { hlT = t && (t.issues.length || t.maps.length || t.repos.length || t.prs.length) ? t : null; },
+      tipOpen: () => !!(selected || hover),
+      nodesOf: () => nodes,
+      sunsOf: () => suns,
+      galaxyRepos: () => [...galaxies.keys()],
+    };
+  })();
+
+  /* ================= demo panel ================= */
+  const DEMO_BUTTONS = [
+    { id: "rift", label: "Brecha", hint: "Issue nuevo sin mapa", color: "--ice" },
+    { id: "bigbang", label: "Big bang", hint: "Mapa nuevo", color: "--sky" },
+    { id: "flare", label: "Llamarada", hint: "Issue nuevo en un mapa", color: "--sky" },
+    { id: "adopt", label: "Adopción", hint: "Un mapa adopta un issue", color: "--blue-text" },
+    { id: "agent", label: "Agente", hint: "Un agente trabaja", color: "--agent" },
+    { id: "human", label: "Humano", hint: "Una persona trabaja", color: "--human" },
+    { id: "comet", label: "Cometa", hint: "PR nuevo", color: "--blue-text" },
+    { id: "supernova", label: "Supernova", hint: "PR fusionado", color: "--sky" },
+    { id: "prclosed", label: "PR cerrado", hint: "Cerrado sin fusionar", color: "--ink-faint" },
+    { id: "ok", label: "Action bien", hint: "Action terminó bien", color: "--ok" },
+    { id: "fail", label: "Action falla", hint: "Action falló", color: "--fail" },
+  ];
+  $demoGrid.innerHTML = DEMO_BUTTONS.map(b => `<button type="button" data-ev="${b.id}" title="${esc(b.hint)}"><span class="pip" style="color:var(${b.color})" aria-hidden="true"></span><span>${esc(b.label)}</span></button>`).join("");
+  $demoGrid.addEventListener("click", e => {
+    const b = e.target.closest("button[data-ev]");
+    if (b) demoEvent(b.dataset.ev);
+  });
+  function toggleDemo(force) {
+    const open = force ?? $demo.hidden;
+    $demo.hidden = !open;
+    $tDemo.setAttribute("aria-expanded", open ? "true" : "false");
+    $u.classList.toggle("demo-open", open);
+    if (open) {
+      $demoNote.textContent = demoMode ? "Prueba cada evento sobre el universo de ejemplo." : "Prueba cada evento sobre tus datos. Es de mentira: se va en la próxima actualización.";
+      $demo.classList.remove("in"); void $demo.offsetWidth; $demo.classList.add("in");
+    }
+  }
+  $tDemo.addEventListener("click", () => toggleDemo());
+
+  function fakeIngest(mut) {
+    const next = cloneSnap(latest);
+    mut(next);
+    restate(next);
+    next.at = Date.now();
+    ingest(next, { fake: !demoMode });
+  }
+  function demoEvent(id) {
+    const now = Date.now();
+    const rs = repos.slice();
+    const open = [...latest.issues.values()].filter(i => i.state !== "done");
+    const orphans = open.filter(i => !i.map);
+    const mapList = [...latest.maps.values()];
+    const newNum = repo => demoMode ? demoNum(repo) : 90000 + Math.floor(Math.random() * 9000);
+    if (id === "ok" || id === "fail") {
+      const repo = pick(rs);
+      enqueue([{ type: "action", ok: id === "ok", repo, at: now, url: `https://github.com/${OWNER}/${repo}/actions`, text: id === "ok" ? "Action terminó bien" : "Action falló" }]);
+      return;
+    }
+    if (id === "rift") {
+      const repo = pick(rs), n = newNum(repo);
+      fakeIngest(s => s.issues.set(keyOf(repo, n), { key: keyOf(repo, n), repo, number: n, title: "Ejemplo: " + pick(DEMO_TITLES), url: issueUrl(repo, n), assignees: [], blockers: [], map: null, created: now, closedAt: 0, state: "todo" }));
+    } else if (id === "bigbang") {
+      const repo = pick(rs), m = newNum(repo), mk = keyOf(repo, m);
+      fakeIngest(s => {
+        s.maps.set(mk, { key: mk, repo, number: m, title: "Ejemplo: " + pick(DEMO_MAPS), url: issueUrl(repo, m), created: now, failed: false });
+        const cnt = 3 + Math.floor(Math.random() * 3);
+        let prev = null;
+        for (let i = 0; i < cnt; i++) {
+          const n = newNum(repo), k = keyOf(repo, n);
+          s.issues.set(k, { key: k, repo, number: n, title: "Ejemplo: " + pick(DEMO_TITLES), url: issueUrl(repo, n), assignees: [], blockers: prev && i % 2 ? [prev] : [], map: mk, created: now, closedAt: 0, state: "todo" });
+          prev = k;
+        }
+      });
+    } else if (id === "flare") {
+      if (!mapList.length) return demoEvent("bigbang");
+      const m = pick(mapList), n = newNum(m.repo), k = keyOf(m.repo, n);
+      fakeIngest(s => s.issues.set(k, { key: k, repo: m.repo, number: n, title: "Ejemplo: " + pick(DEMO_TITLES), url: issueUrl(m.repo, n), assignees: [], blockers: [], map: m.key, created: now, closedAt: 0, state: "todo" }));
+    } else if (id === "adopt") {
+      if (!orphans.length || !mapList.length) return demoEvent(mapList.length ? "rift" : "bigbang");
+      const o = pick(orphans);
+      const same = mapList.filter(m => m.repo === o.repo);
+      const m = pick(same.length ? same : mapList);
+      fakeIngest(s => { s.issues.get(o.key).map = m.key; });
+    } else if (id === "agent" || id === "human") {
+      const free = open.filter(i => !latest.work.has(i.key));
+      if (!free.length) return;
+      const i = pick(free);
+      fakeIngest(s => { s.work.set(i.key, { kind: id, at: now, branch: `feat/${i.number}-demo` }); });
+    } else if (id === "comet") {
+      const cands = open.filter(i => i.state !== "review");
+      const i = cands.length ? pick(cands) : null;
+      const repo = i ? i.repo : pick(rs), n = newNum(repo), k = prKeyOf(repo, n);
+      fakeIngest(s => s.prs.set(k, { key: k, repo, number: n, title: "Ejemplo: PR de prueba", url: prUrl(repo, n), closes: i ? [i.key] : [], head: i ? `feat/${i.number}-demo` : "", created: now }));
+    } else if (id === "supernova" || id === "prclosed") {
+      const cands = [...latest.prs.values()].filter(p => id === "prclosed" || p.closes.some(k => latest.issues.get(k) && latest.issues.get(k).state !== "done"));
+      if (!cands.length) {
+        demoEvent("comet");
+        setTimeout(() => demoEvent(id), 3600);
+        return;
+      }
+      const p = pick(cands);
+      demoClosed.set(p.key, { repo: p.repo, number: p.number, title: p.title, merged: id === "supernova", at: now, closes: p.closes.slice() });
+      fakeIngest(s => {
+        s.prs.delete(p.key);
+        if (id === "supernova") for (const k of p.closes) {
+          const i = s.issues.get(k);
+          if (!i) continue;
+          if (i.map) { i.state = "done"; i.closedAt = now; } else s.issues.delete(k);
+          for (const [wk, w] of s.work) if (wk === k) s.work.delete(wk);
+        }
+      });
+    }
+  }
+
+  /* ================= keyboard, tools ================= */
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && e.target.closest && e.target.closest("input, textarea, select")) return;
+    const k = e.key;
+    if (k === "/") { openSearch(); e.preventDefault(); return; }
+    if (k === "p" || k === "P") { setTour(!tourOn); e.preventDefault(); return; }
+    if (k === "d" || k === "D") { toggleDemo(); e.preventDefault(); return; }
+    if (k === "Escape") {
+      if (fsMode === "css") { exitFs(); e.preventDefault(); return; }
+      if (!$demo.hidden) { toggleDemo(false); $tDemo.focus(); return; }
+      Scene.closeTip(); return;
+    }
+    if (k === "0") { Scene.recenter(); e.preventDefault(); return; }
+    if (k === "f" || k === "F") { toggleFs(); e.preventDefault(); return; }
+    if (e.target !== $u && e.target !== document.body) return;
+    const step = 64;
+    if (k === "ArrowLeft") Scene.keyPan(step, 0); else if (k === "ArrowRight") Scene.keyPan(-step, 0);
+    else if (k === "ArrowUp") Scene.keyPan(0, step); else if (k === "ArrowDown") Scene.keyPan(0, -step);
+    else if (k === "+" || k === "=") Scene.keyPan(0, 0, 1.25); else if (k === "-") Scene.keyPan(0, 0, 1 / 1.25);
+    else return;
+    e.preventDefault();
+  });
+  $tFit.addEventListener("click", () => Scene.recenter());
+
+  /* ================= paseo automático ================= */
+  // After 2 min with no input the camera tours the galaxies. Any input stops it on the spot.
+  const $tTour = document.getElementById("tTour");
+  const IDLE_MS = 2 * 60 * 1000;
+  let tourOn = !still();
+  try { const v = localStorage.getItem("universo.paseo"); if (v === "1") tourOn = true; else if (v === "0") tourOn = false; } catch (e) {}
+  let lastInput = performance.now();
+  function syncTour() {
+    const label = tourOn ? "Paseo automático: activado (tecla P)" : "Paseo automático: desactivado (tecla P)";
+    $tTour.setAttribute("aria-pressed", tourOn ? "true" : "false");
+    $tTour.setAttribute("aria-label", label);
+    $tTour.title = label;
+  }
+  function setTour(on) {
+    tourOn = on;
+    try { localStorage.setItem("universo.paseo", on ? "1" : "0"); } catch (e) {}
+    if (!on) Scene.tourStop();
+    lastInput = performance.now();
+    syncTour();
+  }
+  $tTour.addEventListener("click", () => setTour(!tourOn));
+  syncTour();
+  function onInput() { lastInput = performance.now(); Scene.tourStop(); }
+  for (const t of ["pointerdown", "wheel", "keydown", "touchstart"]) window.addEventListener(t, onInput, { capture: true, passive: true });
+  window.addEventListener("pointermove", e => { if (e.pointerType !== "touch" && (e.movementX || e.movementY)) onInput(); }, { capture: true, passive: true });
+  setInterval(() => {
+    if (!tourOn || document.hidden || Scene.touring() || !$notice.hidden || !$search.hidden) return;
+    if (performance.now() - lastInput >= IDLE_MS) Scene.tourStart();
+  }, 2000);
+
+  /* ================= buscador ================= */
+  const $search = document.getElementById("search");
+  const $q = document.getElementById("q");
+  const $qList = document.getElementById("qList");
+  const $tSearch = document.getElementById("tSearch");
+  let hits = [], active = 0, flashTimer = 0;
+  const fold = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  function openSearch() {
+    if (!$search.hidden) { $q.focus(); $q.select(); return; }
+    $search.hidden = false;
+    $tSearch.setAttribute("aria-expanded", "true");
+    $search.classList.remove("in"); void $search.offsetWidth; $search.classList.add("in");
+    $q.value = ""; hits = []; renderHits();
+    $q.focus();
+  }
+  function closeSearch(back) {
+    $search.hidden = true;
+    $tSearch.setAttribute("aria-expanded", "false");
+    $q.setAttribute("aria-expanded", "false");
+    if (back) $tSearch.focus();
+  }
+  function findHits(q) {
+    q = q.trim();
+    if (!q) return [];
+    const all = Scene.searchables();
+    const m = /^(?:([a-z0-9_.-]+))?#(\d+)$/i.exec(q) || /^(\d+)$/.exec(q) && [q, "", q];
+    if (m) {
+      const n = Number(m[2]), repo = (m[1] || "").toLowerCase();
+      return all.filter(x => x.number === n && (!repo || x.repo.toLowerCase().includes(repo))).sort((a, b) => (a.kind === "map") - (b.kind === "map")).slice(0, 6);
+    }
+    const f = fold(q);
+    return all.filter(x => fold(x.title).includes(f) || fold(x.repo + "#" + x.number).includes(f))
+      .sort((a, b) => (fold(a.title).indexOf(f) - fold(b.title).indexOf(f)) || (b.kind === "map") - (a.kind === "map"))
+      .slice(0, 6);
+  }
+  function renderHits() {
+    const q = $q.value.trim();
+    if (!q) { $qList.innerHTML = ""; $q.setAttribute("aria-expanded", "false"); $q.removeAttribute("aria-activedescendant"); return; }
+    if (!hits.length) { $qList.innerHTML = `<li class="none" role="option" aria-disabled="true">Nada con «${esc(q)}».</li>`; $q.setAttribute("aria-expanded", "true"); return; }
+    $qList.innerHTML = hits.map((h, i) => `<li role="option" id="qh${i}" data-i="${i}" aria-selected="${i === active}"><span class="g ${h.kind === "map" ? "g-sun" : "g-" + (h.state === "done" ? "todo" : h.state)}" aria-hidden="true"></span><span class="ref">${esc(h.repo)} #${h.number}</span><span class="t">${esc(h.title)}</span></li>`).join("");
+    $q.setAttribute("aria-expanded", "true");
+    $q.setAttribute("aria-activedescendant", "qh" + active);
+  }
+  function choose(h) {
+    if (!h) return;
+    closeSearch(false);
+    const t = h.kind === "map" ? targetsOf({ map: h.key, repo: h.repo }) : targetsOf({ issue: h.key, repo: h.repo });
+    Scene.travel(t, 800);
+    clearTimeout(flashTimer);
+    Scene.highlight(t);
+    flashTimer = setTimeout(() => { if (!logHover) Scene.highlight(null); }, still() ? 2000 : 2800);
+  }
+  $q.addEventListener("input", () => { hits = findHits($q.value); active = 0; renderHits(); });
+  $q.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { if (hits.length) { active = (active + 1) % hits.length; renderHits(); } e.preventDefault(); }
+    else if (e.key === "ArrowUp") { if (hits.length) { active = (active + hits.length - 1) % hits.length; renderHits(); } e.preventDefault(); }
+    else if (e.key === "Enter") { choose(hits[active]); e.preventDefault(); }
+    else if (e.key === "Escape") { closeSearch(true); e.preventDefault(); e.stopPropagation(); }
+  });
+  $qList.addEventListener("pointerdown", e => { const li = e.target.closest("li[data-i]"); if (li) { e.preventDefault(); choose(hits[Number(li.dataset.i)]); } });
+  $q.addEventListener("blur", () => setTimeout(() => { if (!$search.contains(document.activeElement)) closeSearch(false); }, 150));
+  $tSearch.addEventListener("click", () => { if ($search.hidden) openSearch(); else closeSearch(true); });
+
+  // Pantalla completa: the real API when the host allows it, else a clean mode without the chrome.
+  let fsMode = null;
+  const ICON_EXPAND = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`;
+  const ICON_COLLAPSE = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`;
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const fsAllowed = () => !!($u.requestFullscreen || $u.webkitRequestFullscreen) && document.fullscreenEnabled !== false && document.webkitFullscreenEnabled !== false;
+  function syncFs() {
+    const label = fsMode ? "Salir de pantalla completa (tecla F)" : "Pantalla completa (tecla F)";
+    $tFs.setAttribute("aria-label", label); $tFs.title = label;
+    $tFs.innerHTML = fsMode ? ICON_COLLAPSE : ICON_EXPAND;
+  }
+  function enterCss() { fsMode = "css"; $u.classList.add("is-clean"); syncFs(); }
+  function exitFs() {
+    if (fsMode === "css") { fsMode = null; $u.classList.remove("is-clean"); syncFs(); return; }
+    const x = document.exitFullscreen || document.webkitExitFullscreen;
+    try { const r = x && x.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
+  function toggleFs() {
+    if (fsMode) { exitFs(); return; }
+    if (!fsAllowed()) { enterCss(); return; }
+    const rq = $u.requestFullscreen || $u.webkitRequestFullscreen;
+    try { const r = rq.call($u); if (r && r.then) r.catch(() => enterCss()); } catch (e) { enterCss(); }
+  }
+  function onFsChange() {
+    const on = fsElement() === $u;
+    if (on) { fsMode = "api"; $u.classList.add("is-clean"); }
+    else if (fsMode === "api") { fsMode = null; $u.classList.remove("is-clean"); }
+    syncFs();
+  }
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
+  $tFs.addEventListener("click", toggleFs);
+  syncFs();
+
+  /* ================= boot ================= */
+  (async () => {
+    const started = await Scene.init();
+    const use = window.claude && typeof window.claude.use === "function" ? window.claude.use("mcp") : Promise.resolve(null);
+    let ns = null;
+    try { ns = await use; } catch (e) { ns = null; }
+    mcp = ns;
+    if (!mcp) {
+      demoMode = true;
+      repos = DEMO_REPOS.slice();
+      renderStatus();
+      if (started) ingest(makeDemo());
+      return;
+    }
+    renderStatus();
+    reconcileLive();
+  })();
+})();
+</script>
+
+</body></html>
