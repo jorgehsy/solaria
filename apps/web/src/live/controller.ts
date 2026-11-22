@@ -53,6 +53,8 @@ export interface ControllerState {
   log: LogEntry[];
   /** When the data was last checked (for "updated N ago"). */
   checkedAt: number;
+  /** Live mode: how often the server checks GitHub (ms); 0 until the first snapshot. */
+  pollMs: number;
 }
 
 /**
@@ -70,7 +72,7 @@ export class Controller {
   private first = true;
   private scene: SceneApi | null = null;
   private listeners = new Set<() => void>();
-  private state: ControllerState = { mode: "loading", status: { state: "loading" }, repos: [], log: [], checkedAt: 0 };
+  private state: ControllerState = { mode: "loading", status: { state: "loading" }, repos: [], log: [], checkedAt: 0, pollMs: 0 };
   private rng = seeded(Date.now() >>> 0);
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly reducedMotion: () => boolean;
@@ -122,7 +124,7 @@ export class Controller {
     const last = this.state.checkedAt;
     if (last === 0 && snap.checkedAt > 0) this.first = true;
     const quiet = last > 0 && snap.checkedAt - last > GAP_MS;
-    this.set({ mode: "live", status: snap.status, repos: snap.repos });
+    this.set({ mode: "live", status: snap.status, repos: snap.repos, pollMs: snap.pollMs });
     // A rejected token draws no Galaxies: only the card in empty space.
     const rejected = snap.status.state === "error" && snap.status.code === "bad_token";
     this.ingest(rejected ? { ...snap.universe, repos: [] } : snap.universe, { quiet });
@@ -130,8 +132,8 @@ export class Controller {
   }
 
   /** Nothing changed on the server's last poll. */
-  fresh(checkedAt: number): void {
-    this.set({ checkedAt });
+  fresh(checkedAt: number, pollMs: number): void {
+    this.set({ checkedAt, pollMs });
   }
 
   /**

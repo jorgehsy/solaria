@@ -72,7 +72,7 @@ Voice: space words for events and objects, short and playful, with the GitHub wo
 | `statusTip.demo` | Demo data. Add a GitHub token to see your own repos. | Status dot hover in demo mode. Artifact L1093 (second sentence rewritten: claude.ai connector gone) |
 | `statusTip.ok` | All good. Checking GitHub every minute. | Status dot hover, healthy. Artifact L1101; 60 s poll while a browser is open (rate-limit decision) |
 | `statusTip.stale` | Couldn't read ${repos}. Showing data from ${age}. | Status dot hover, some repos failed. Artifact L1102 |
-| `statusTip.old` | No new data from GitHub for over 3 minutes. Showing data from ${age}. | Status dot hover, whole feed old. Artifact L1103 |
+| `statusTip.old` | No new data from GitHub for a while. Showing data from ${age}. | Status dot hover, whole feed old: no data for 3 min, or poll interval + 2 min when polling is stretched (#38). Artifact L1103 |
 
 ## 4. Controls, search & keyboard
 

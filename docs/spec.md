@@ -177,7 +177,7 @@ Behaviour:
 - A failing repo keeps its last good data, marked `stale`. It is never dropped, so no fake Close animations.
 - The first snapshot draws the Universe and emits no events (no Big Bang storm on start). Source: ticket #16 (handoff).
 - Browser gap rule: if the gap between snapshots exceeds 10 minutes (laptop asleep), redraw quietly like a first load and list the changes in the Activity log; under 10 minutes animate as usual.
-- Whole-feed freshness: status text uses "updated ${ago}"; no new data for over 3 minutes shows the `statusTip.old` text.
+- Whole-feed freshness: status text uses "updated ${ago}"; no new data for over 3 minutes (or the poll interval plus 2 minutes, when the server polls less often to stay within the rate budget) shows the `statusTip.old` text.
 
 Source: #8, ADR 0003, #9 (item 4), #14.
 

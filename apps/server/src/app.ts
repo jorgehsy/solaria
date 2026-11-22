@@ -6,7 +6,7 @@ import type { ServerSnapshot } from "@solaria/contract";
 
 /** What the live stream needs from the poller. */
 export interface LiveFeed {
-  subscribe(fn: (e: { kind: "snapshot"; snapshot: ServerSnapshot } | { kind: "fresh"; checkedAt: number }) => void): () => void;
+  subscribe(fn: (e: { kind: "snapshot"; snapshot: ServerSnapshot } | { kind: "fresh"; checkedAt: number; pollMs: number }) => void): () => void;
   /** A browser connected; returns the function to call when it leaves. */
   addWatcher(): () => void;
 }
@@ -42,7 +42,7 @@ export function createApp(opts: AppOptions): express.Express {
     send(SSE_SNAPSHOT, opts.snapshot());
     const unsubscribe = opts.feed?.subscribe((e) => {
       if (e.kind === "snapshot") send(SSE_SNAPSHOT, e.snapshot);
-      else send(SSE_FRESH, { checkedAt: e.checkedAt });
+      else send(SSE_FRESH, { checkedAt: e.checkedAt, pollMs: e.pollMs });
     });
     const leave = opts.feed?.addWatcher();
     const beat = setInterval(() => res.write(": keep-alive\n\n"), opts.heartbeatMs ?? 25_000);

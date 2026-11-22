@@ -96,7 +96,7 @@ export const S = {
     demo: "Demo data. Add a GitHub token to see your own repos.",
     ok: "All good. Checking GitHub every minute.",
     stale: (repos: string, age: string) => `Couldn't read ${repos}. Showing data from ${age}.`,
-    old: (age: string) => `No new data from GitHub for over 3 minutes. Showing data from ${age}.`,
+    old: (age: string) => `No new data from GitHub for a while. Showing data from ${age}.`,
   },
   tool: {
     search: "Search (key /)",
