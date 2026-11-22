@@ -11,10 +11,12 @@ _Avoid_: epic, parent issue.
 
 **Planet**: An issue that belongs to a Map, orbiting that Map's Sun.
 
+**External Planet**: A Planet whose issue lives in a repo outside the universe. Shown orbiting its Map's Sun, but without pull request signals.
+
 **Gas**: The cloud of issues in a repo that belong to no Map.
 _Avoid_: orphan (in user-facing text).
 
-**Satellite**: The mark on a Planet that someone (a person or an agent) is working on it right now.
+**Satellite**: The mark on an open issue showing who it is assigned to. Its label is the first assignee, plus a count when there are more (`alice +2`).
 
 **Comet**: A newly opened pull request, travelling to the issue it closes.
 
