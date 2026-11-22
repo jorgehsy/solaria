@@ -8,3 +8,7 @@ playwright-report/
 *.tsbuildinfo
 .remember/
 .DS_Store
+
+# e2e fixtures (fake token, fake GitHub)
+!e2e/fixtures/**/.env
+!e2e/fixtures/**/solaria.config.json
