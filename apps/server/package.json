@@ -1,0 +1,24 @@
+{
+  "name": "@solaria/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solaria/contract": "workspace:*",
+    "express": "5.3.0",
+    "tsx": "4.23.15"
+  },
+  "devDependencies": {
+    "@solaria/config": "workspace:*",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vitest": "5.1.1"
+  }
+}

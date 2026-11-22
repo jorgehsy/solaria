@@ -1,0 +1,186 @@
+/**
+ * Every user-facing string, keyed as in docs/copy/ui-strings.md. Plain English, no i18n.
+ * `${x}` in the deck becomes a function argument here. Demo data titles live in @solaria/universe.
+ */
+export const S = {
+  brand: {
+    pageTitle: "Solaria",
+    badge: "SOLARIA",
+    title: "Universe",
+    ariaLabel: "Solaria Universe",
+  },
+  status: {
+    badgeDemo: "Demo",
+    demoText: "demo data",
+    loading: "loading",
+    updated: (ago: string) => `updated ${ago}`,
+    updatedAria: (ago: string, why: string) => `Updated ${ago}. ${why}`,
+  },
+  universe: {
+    srDescription: (ni: number, maps: number, repos: number) =>
+      `${ni} open issues in ${maps} Maps, across ${repos} repos. Each repo is a Galaxy; each Map is a Sun with its issues in orbit. Issues with no Map drift as a reddish cloud of Gas.`,
+    demoNoToken: {
+      title: "Demo mode: no token",
+      hint: "No .env or solaria.config.json found, so Solaria is showing made-up demo data. Copy the example files, add your token, then restart.",
+      snippet: "cp .env.example .env\ncp solaria.config.example.json solaria.config.json\n# then edit .env:\nGITHUB_TOKEN=github_pat_xxxxxxxx",
+    },
+    badToken: {
+      title: "GitHub rejected the token",
+      hint: "The token in .env is invalid or expired. Make a new fine-grained read-only token (Issues + Pull requests: read), put it in .env, then restart.",
+      snippet: "GITHUB_TOKEN=github_pat_xxxxxxxx",
+    },
+    noRepos: {
+      title: "No repos yet",
+      hint: "The token works, but solaria.config.json lists no repos. Add at least one as owner/repo, then restart.",
+      snippet: '{ "repos": ["acme/web", "acme/api"] }',
+    },
+    rateLimited: {
+      title: "GitHub rate limit reached",
+      hint: (time: string, countdown: string) =>
+        `GitHub's hourly limit for this account is used up. Nothing to fix: Solaria resumes at ${time} (${countdown}). Other tools on the same GitHub account share this limit.`,
+    },
+  },
+  legend: {
+    aria: "Legend",
+    map: "Map",
+    todo: "To do",
+    draftPr: "Draft PR open",
+    blocked: "Blocked",
+    inReview: "In review",
+    assigned: "Assigned",
+    gas: "Gas (no Map)",
+  },
+  state: {
+    todo: "To do",
+    doing: "Draft PR open",
+    blocked: "Blocked",
+    review: "In review",
+    done: "Done",
+  },
+  galaxy: {
+    open: (n: number) => `${n} open`,
+    nothingOpen: "nothing open",
+    noData: "no data",
+  },
+  map: {
+    progress: (done: number, total: number) => `${done} of ${total}`,
+    noSubIssues: "no sub-issues",
+    subIssuesFailed: "Couldn't read its sub-issues",
+    aria: (title: string, done: number, total: number) => `Map ${title}: ${done} of ${total} done`,
+  },
+  satellite: {
+    one: (assignee: string) => assignee,
+    many: (assignee: string, rest: number) => `${assignee} +${rest}`,
+  },
+  time: {
+    logNow: "now",
+    logMin: (m: number) => `${m} min`,
+    logHour: (h: number) => `${h} h`,
+    logDay: (d: number) => `${d} d`,
+    justNow: "just now",
+    secAgo: (n: number) => `${n} s ago`,
+    minAgo: (m: number) => `${m} min ago`,
+    hourAgo: (h: number) => `${h} h ago`,
+    inMin: (m: number) => `in ${m} min`,
+  },
+  tip: {
+    sunChip: (done: number, total: number) => `Map · ${done} of ${total} done`,
+    planetAssigned: (names: string) => ` · assigned to ${names}`,
+    ref: (repo: string, n: number, mapTitle: string) => `${repo} #${n} · ${mapTitle}`,
+    openOnGithub: "Open on GitHub",
+    hitAria: (repo: string, n: number, title: string) => `${repo} #${n}: ${title}`,
+  },
+  statusTip: {
+    demo: "Demo data. Add a GitHub token to see your own repos.",
+    ok: "All good. Checking GitHub every minute.",
+    stale: (repos: string, age: string) => `Couldn't read ${repos}. Showing data from ${age}.`,
+    old: (age: string) => `No new data from GitHub for over 3 minutes. Showing data from ${age}.`,
+  },
+  tool: {
+    search: "Search (key /)",
+    tourOn: "Auto tour: on (key P)",
+    tourOff: "Auto tour: off (key P)",
+    demo: "Demo mode (key D)",
+    recenter: "Recenter (key 0)",
+    fullscreenEnter: "Full screen (key F)",
+    fullscreenExit: "Exit full screen (key F)",
+  },
+  search: {
+    dialogAria: "Search the Universe",
+    placeholder: "#123, repo#123 or part of the title",
+    inputAria: "Search for an issue or Map",
+    resultsAria: "Results",
+    noResults: (q: string) => `Nothing matches «${q}».`,
+  },
+  log: {
+    aria: "Activity",
+    row: (text: string, repo: string, ago: string) => `${text} · ${repo} · ${ago}`,
+    showInUniverse: "Show in the Universe",
+    openOnGithub: "Open on GitHub",
+    openOnGithubAria: (text: string) => `Open on GitHub: ${text}`,
+    bigbang: { tag: "Big Bang", text: (title: string) => `New Map «${title}»` },
+    rift: { tag: "Rift", text: (n: number) => `New issue #${n}` },
+    flare: { tag: "Flare", text: (n: number, map: string) => `#${n} joins «${map}»` },
+    adopt: { tag: "Adopt", text: (n: number, map: string) => `#${n} added to «${map}»` },
+    comet: {
+      tag: "Comet",
+      textRefs: (pr: number, refs: string) => `PR #${pr} opened, closes ${refs}`,
+      text: (pr: number) => `PR #${pr} opened`,
+    },
+    close: { tag: "Close", text: (n: number) => `#${n} closed` },
+    supernova: {
+      tag: "Supernova",
+      textRefs: (pr: number, refs: string) => `PR #${pr} merged, closes ${refs}`,
+      text: (pr: number) => `PR #${pr} merged`,
+    },
+    fade: { tag: "Fade", text: (pr: number) => `PR #${pr} closed without merging` },
+  },
+  demo: {
+    title: "Demo mode",
+    kbd: "D",
+    noteDemo: "Try each event on the demo Universe.",
+    noteLive: "Try each event on your own data. It's pretend: it disappears on the next refresh.",
+    bigbang: { label: "Big Bang", hint: "New Map" },
+    rift: { label: "Rift", hint: "New issue, no Map" },
+    flare: { label: "Flare", hint: "New issue joins a Map" },
+    adopt: { label: "Adopt", hint: "Existing issue added to a Map" },
+    comet: { label: "Comet", hint: "PR opened" },
+    supernova: { label: "Supernova", hint: "PR merged" },
+    fade: { label: "Fade", hint: "PR closed without merging" },
+    testPrTitle: "Test PR",
+  },
+  err: {
+    allFailed: { title: "Couldn't read GitHub.", text: "GitHub didn't respond. Trying again on the next refresh." },
+    webgl: {
+      title: "This screen needs WebGL.",
+      text: "Your browser doesn't have it enabled. Try an up-to-date Chrome, Edge or Safari, or turn on hardware acceleration.",
+      initFailed: "Couldn't start drawing in your browser. Try an up-to-date Chrome, Edge or Safari.",
+    },
+  },
+  code: {
+    bad_token: "Token rejected",
+    no_access: "No access",
+    not_found: "Repo not found",
+    rate_limited: "Rate limited",
+    network: "Can't reach GitHub",
+  },
+  repo: {
+    staleAge: (age: string) => `Showing data from ${age}.`,
+    noAccess: {
+      hint: (org: string) => `Org ${org} has not approved this token. Authorize it for SSO at github.com/settings/tokens, or ask an org owner to approve it. Or give this org its own token:`,
+      snippet: (org: string) => `GITHUB_TOKEN_${org}=github_pat_xxxxxxxx`,
+    },
+    network: { hint: "Can't reach api.github.com. Showing the last good data. Check your connection; Solaria retries on its own." },
+    notFound: {
+      hint: (repo: string, suggestion: string) => `GitHub has no repo ${repo}. Check the spelling in solaria.config.json (did you mean ${suggestion}?).`,
+      snippet: (suggestion: string) => `"repos": ["${suggestion}"]`,
+    },
+    rateLimited: { hint: "Showing the last good data until the limit resets." },
+    noMaps: {
+      title: "No Maps yet",
+      hint: 'These issues belong to no Map yet. Open an issue titled "Map: …" and add sub-issues to it. See docs/repo-requirements.md.',
+    },
+    noOpenIssues: (repo: string) => `${repo}: no open issues`,
+  },
+  convention: { mapPrefix: "Map:" },
+} as const;
