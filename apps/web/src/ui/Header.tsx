@@ -3,7 +3,7 @@ import { S } from "./strings.ts";
 import { statusAgo } from "./format.ts";
 
 /** Wordmark (orbit badge), the Universe title and the status line. */
-export function Header({ mode, checkedAt }: { mode: Mode; checkedAt: number }) {
+export function Header({ mode, checkedAt, error }: { mode: Mode; checkedAt: number; error: boolean }) {
   return (
     <header className="brand" data-chrome>
       <div className="wordmark">
@@ -18,8 +18,8 @@ export function Header({ mode, checkedAt }: { mode: Mode; checkedAt: number }) {
             <span className="fresh" title={S.statusTip.demo} aria-label={S.statusTip.demo}><i className="dot" aria-hidden="true" />{S.status.demoText}</span>
           </>
         )}
-        {mode === "loading" && <span className="fresh"><i className="dot" aria-hidden="true" />{S.status.loading}</span>}
-        {mode === "live" && (
+        {(mode === "loading" || (mode === "live" && !checkedAt && !error)) && <span className="fresh"><i className="dot" aria-hidden="true" />{S.status.loading}</span>}
+        {mode === "live" && checkedAt > 0 && (
           <span className="fresh ok" title={S.statusTip.ok} aria-label={S.status.updatedAria(statusAgo(checkedAt), S.statusTip.ok)}>
             <i className="dot" aria-hidden="true" />{S.status.updated(statusAgo(checkedAt))}
           </span>

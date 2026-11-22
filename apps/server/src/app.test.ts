@@ -7,7 +7,7 @@ import { createApp } from "./app.ts";
 let server: Server;
 let base = "";
 beforeAll(async () => {
-  server = createApp().listen(0, "127.0.0.1");
+  server = createApp({ snapshot: () => ({ mode: "demo" }) }).listen(0, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });

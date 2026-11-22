@@ -270,3 +270,11 @@ h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.1; font-weight: 500; lette
 
 .lab.off { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .orbit { animation: none; } }
+
+/* Demo with no token: the demo keeps running behind a dim, soft veil. */
+.veil { position: absolute; inset: 0; pointer-events: none; background: rgba(4, 10, 21, 0.45); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.snippet {
+  margin: 0; width: 100%; padding: 10px 12px; border-radius: 10px; overflow-x: auto;
+  background: rgba(4, 10, 21, 0.6); box-shadow: inset 0 0 0 1px var(--glass-line);
+  font: 500 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ice); white-space: pre; user-select: text; -webkit-user-select: text;
+}

@@ -2,6 +2,7 @@ import {
   diff, emptyMasks, emptyUniverse, holdFor, makeDemoUniverse, demoEvent, release, settle, viewOf, repoOf, seeded,
 } from "@solaria/universe";
 import type { DemoEventKind, IssueKey, Masks, PrKey, Universe, UniverseEvent, View } from "@solaria/universe";
+import type { LiveSnapshot, RepoStatus, UniverseStatus } from "@solaria/contract";
 
 /** One event plays every 1.5 s (spec section 7). */
 export const QUEUE_GAP = 1500;
@@ -41,6 +42,9 @@ export type Mode = "loading" | "demo" | "live";
 
 export interface ControllerState {
   mode: Mode;
+  /** Live mode: the whole Universe's health and each repo's. */
+  status: UniverseStatus;
+  repos: RepoStatus[];
   log: LogEntry[];
   /** When the data was last checked (for "updated N ago"). */
   checkedAt: number;
@@ -59,7 +63,7 @@ export class Controller {
   private first = true;
   private scene: SceneApi | null = null;
   private listeners = new Set<() => void>();
-  private state: ControllerState = { mode: "loading", log: [], checkedAt: 0 };
+  private state: ControllerState = { mode: "loading", status: { state: "loading" }, repos: [], log: [], checkedAt: 0 };
   private rng = seeded(Date.now() >>> 0);
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly reducedMotion: () => boolean;
@@ -101,8 +105,17 @@ export class Controller {
 
   /** Demo mode: the browser builds the demo Universe itself (no server data, no token). */
   startDemo(now = Date.now()): void {
-    this.set({ mode: "demo" });
+    this.set({ mode: "demo", status: { state: "ok" } });
     this.ingest(makeDemoUniverse(now));
+  }
+
+  /** A live snapshot from the server: its health, then its Universe. */
+  live(snap: LiveSnapshot): void {
+    this.set({ mode: "live", status: snap.status, repos: snap.repos });
+    // A rejected token draws no Galaxies: only the card in empty space.
+    const rejected = snap.status.state === "error" && snap.status.code === "bad_token";
+    this.ingest(rejected ? { ...snap.universe, repos: [] } : snap.universe);
+    this.set({ checkedAt: snap.checkedAt });
   }
 
   /** A new snapshot. The first one draws quietly; later ones are diffed and played as events. */
