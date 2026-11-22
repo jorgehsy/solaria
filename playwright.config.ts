@@ -21,7 +21,8 @@ export default defineConfig({
   },
   projects: [
     { name: "demo", testMatch: /demo\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
-    { name: "live", testMatch: /live\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${LIVE_PORT}` } },
+    // Live spec files share one fake GitHub, so they run one at a time.
+    { name: "live", testMatch: /live\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${LIVE_PORT}` } },
   ],
   // Started in order: the first builds the web app that both Solaria servers serve.
   webServer: [

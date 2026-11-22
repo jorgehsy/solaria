@@ -9,6 +9,11 @@ export const QUEUE_GAP = 1500;
 /** The Activity log shows the last 5 rows from the last 2 hours. */
 export const LOG_WINDOW = 2 * 60 * 60 * 1000;
 const LOG_MAX = 5;
+/**
+ * Browser gap rule (spec section 6): when the data was last checked more than 10 minutes before a new
+ * snapshot (laptop asleep), redraw quietly like a first load and only list the changes in the log.
+ */
+export const GAP_MS = 10 * 60 * 1000;
 
 /** What an event touched: lit when its log row is hovered, framed when the camera travels to it. */
 export interface Targets {
@@ -60,6 +65,8 @@ export class Controller {
   private queue: UniverseEvent[] = [];
   private nextAt = 0;
   private holding = false;
+  /** The event whose camera travel is under way: shifted off the queue but not yet played. */
+  private travelling: UniverseEvent | null = null;
   private first = true;
   private scene: SceneApi | null = null;
   private listeners = new Set<() => void>();
@@ -112,11 +119,13 @@ export class Controller {
   /** A live snapshot from the server: its health, then its Universe. */
   live(snap: LiveSnapshot): void {
     // The first snapshot with data draws quietly, like a first load: no storm of Rifts.
-    if (this.state.checkedAt === 0 && snap.checkedAt > 0) this.first = true;
+    const last = this.state.checkedAt;
+    if (last === 0 && snap.checkedAt > 0) this.first = true;
+    const quiet = last > 0 && snap.checkedAt - last > GAP_MS;
     this.set({ mode: "live", status: snap.status, repos: snap.repos });
     // A rejected token draws no Galaxies: only the card in empty space.
     const rejected = snap.status.state === "error" && snap.status.code === "bad_token";
-    this.ingest(rejected ? { ...snap.universe, repos: [] } : snap.universe);
+    this.ingest(rejected ? { ...snap.universe, repos: [] } : snap.universe, { quiet });
     this.set({ checkedAt: snap.checkedAt });
   }
 
@@ -125,8 +134,11 @@ export class Controller {
     this.set({ checkedAt });
   }
 
-  /** A new snapshot. The first one draws quietly; later ones are diffed and played as events. */
-  ingest(next: Universe): void {
+  /**
+   * A new snapshot. The first one draws quietly; later ones are diffed and played as events.
+   * `quiet` (after a long gap) shows everything at once and only logs what changed.
+   */
+  ingest(next: Universe, opts: { quiet?: boolean } = {}): void {
     if (this.first) {
       this.first = false;
       this.latest = next;
@@ -136,6 +148,18 @@ export class Controller {
     }
     const prev = this.latest;
     const evs = diff(prev, next, next.at);
+    if (opts.quiet) {
+      // Events not played yet are listed too; nothing is animated or held back.
+      const missed = [...(this.travelling ? [this.travelling] : []), ...this.queue, ...evs];
+      this.queue = [];
+      this.travelling = null;
+      this.masks = emptyMasks();
+      this.latest = next;
+      this.set({ checkedAt: next.at });
+      this.scene?.refresh(this.view(), { first: true });
+      this.pushLog(missed, false);
+      return;
+    }
     holdFor(prev, next, evs, this.masks);
     this.latest = next;
     this.queue.push(...evs);
@@ -167,8 +191,12 @@ export class Controller {
     // On the Auto tour, the camera first travels to an event that is off screen or too small.
     if (this.scene?.touring() && this.scene.needsTravel(t)) {
       this.holding = true;
+      this.travelling = ev;
       this.scene.travelForEvent(t, () => {
         this.holding = false;
+        // A gap redraw while travelling already showed and logged this event.
+        if (this.travelling !== ev) return;
+        this.travelling = null;
         this.nextAt = performance.now() + QUEUE_GAP;
         this.play(ev);
       });
@@ -188,13 +216,15 @@ export class Controller {
     };
     if (animate && scene) scene.fx(ev, done);
     else done();
-    this.pushLog(ev);
+    this.pushLog([ev], true);
   }
 
-  private pushLog(ev: UniverseEvent): void {
+  private pushLog(evs: UniverseEvent[], fresh: boolean): void {
+    if (!evs.length) return;
     const now = Date.now();
-    const entry: LogEntry = { id: Math.random().toString(36).slice(2), ev, at: Math.min(now, ev.at || now), fresh: true, targets: this.targetsOf(ev) };
-    const log = [...this.state.log, entry].sort((a, b) => a.at - b.at).slice(-LOG_MAX);
+    const rows = evs.map((ev): LogEntry => ({ id: Math.random().toString(36).slice(2), ev, at: Math.min(now, ev.at || now), fresh, targets: this.targetsOf(ev) }));
+    // Stable sort: events from one snapshot keep their play order.
+    const log = [...this.state.log, ...rows].sort((a, b) => a.at - b.at).slice(-LOG_MAX);
     this.set({ log });
   }
 
