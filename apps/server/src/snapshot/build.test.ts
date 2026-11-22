@@ -102,6 +102,8 @@ describe("buildUniverse", () => {
       });
       expect(u.issues["acme/api#7"]?.map).toBe("acme/web#1");
       expect(u.issues["acme/api#8"]).toMatchObject({ repo: "acme/api", closed: true, map: "acme/web#1" });
+      // Every child of the Map is in the Universe, so its progress can count all of them.
+      expect(Object.values(u.issues).filter((i) => i.map === "acme/web#1").map((i) => [i.key, i.closed])).toEqual([["acme/api#7", false], ["acme/api#8", true]]);
     });
 
     it("makes a sub-issue in a repo outside the config an External Planet of its Map, with no PR signals", () => {

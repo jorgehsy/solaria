@@ -31,13 +31,18 @@ export interface LayoutLoose {
   repo: string;
   number: number;
 }
+/** An issue in one Galaxy whose Map is in another: drawn in its own Galaxy, counted in its Sun's progress. */
+export interface LayoutForeign extends LayoutLoose {
+  sun: IssueKey;
+  done: boolean;
+}
 export interface LayoutInput {
   repos: readonly string[];
   suns: LayoutSun[];
   /** Gas: issues that belong to no Map. */
   gas: LayoutLoose[];
   /** Issues that belong to a Map in another Galaxy: a small cluster with a line to their Sun. */
-  foreign: LayoutLoose[];
+  foreign: LayoutForeign[];
   /** Open issues per repo, to choose Focus. */
   openCount: Readonly<Record<string, number>>;
 }
@@ -147,9 +152,11 @@ export function layoutUniverse(input: LayoutInput, opts: LayoutOptions): Layout 
     const n1 = rings.get(1)?.length ?? 0;
     const r1 = Math.max(44, (n1 * 20) / TAU + 30);
     const ringR = (d: number) => r1 + (d - 1) * 30;
-    const total = s.planets.length;
-    const done = s.planets.filter((p) => p.done).length;
-    const r = Math.min(22, Math.max(13, 12 + Math.sqrt(total) * 1.7));
+    // Progress counts every child in a configured repo, wherever it is drawn (spec section 5).
+    const away = input.foreign.filter((f) => f.sun === s.key);
+    const total = s.planets.length + away.length;
+    const done = s.planets.filter((p) => p.done).length + away.filter((f) => f.done).length;
+    const r = Math.min(22, Math.max(13, 12 + Math.sqrt(s.planets.length) * 1.7));
     const off = hash01(s.key) * TAU;
     for (const [d, list] of rings) {
       list.sort((a, b) => a.number - b.number);

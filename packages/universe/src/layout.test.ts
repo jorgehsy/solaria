@@ -40,6 +40,17 @@ describe("layoutUniverse", () => {
     expect(l.suns.get("acme/web#10")?.rings).toHaveLength(3);
   });
 
+  it("counts children drawn in another Galaxy in their Sun's progress, not its size", () => {
+    const i = input();
+    i.foreign = [
+      { key: "acme/api#7", repo: "acme/api", number: 7, sun: "acme/web#10", done: false },
+      { key: "acme/api#8", repo: "acme/api", number: 8, sun: "acme/web#10", done: true },
+      { key: "acme/api#9", repo: "acme/api", number: 9, sun: "acme/web#99", done: true },
+    ];
+    const l = layoutUniverse(i, { reducedMotion: false });
+    expect(l.suns.get("acme/web#10")).toMatchObject({ done: 2, total: 5, r: layoutUniverse(input(), { reducedMotion: false }).suns.get("acme/web#10")?.r });
+  });
+
   it("stops orbits with reduced motion", () => {
     const l = layoutUniverse(input(), { reducedMotion: true });
     expect([...l.planets.values()].every((p) => p.omega === 0)).toBe(true);
