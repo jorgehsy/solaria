@@ -14,6 +14,7 @@ import { DemoPanel } from "./ui/DemoPanel.tsx";
 import { Search } from "./ui/Search.tsx";
 import { Tooltip } from "./ui/Tooltip.tsx";
 import { Card } from "./ui/Card.tsx";
+import { galaxyNotes, universeCard } from "./ui/galaxyNotes.ts";
 import { IconCollapse, IconDemo, IconExpand, IconFit, IconSearch, IconTour } from "./ui/icons.tsx";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -50,6 +51,7 @@ export function App() {
   const searchBtn = useRef<HTMLButtonElement>(null);
   const demoBtn = useRef<HTMLButtonElement>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const now = useNow(10_000);
 
   // Boot: start the Scene, then ask the server which mode to run in.
   useEffect(() => {
@@ -102,6 +104,16 @@ export function App() {
   }, []);
 
   useEffect(() => { document.title = S.brand.pageTitle; }, []);
+
+  // Error and empty states at each Galaxy: ghost, dimmed stale data, small cards, quiet lines.
+  useEffect(() => {
+    const u = controller.universe();
+    const counts: Record<string, { open: number; maps: number }> = {};
+    for (const r of u.repos) counts[r] = { open: 0, maps: 0 };
+    for (const i of Object.values(u.issues)) { const c = counts[i.repo]; if (c && !i.closed) c.open++; }
+    for (const m of Object.values(u.maps)) { const c = counts[m.repo]; if (c) c.maps++; }
+    sceneRef.current?.setNotes(galaxyNotes({ mode: state.mode, status: state.status, repos: state.repos, counts, now }));
+  }, [state, now]);
 
   const highlight = useCallback((t: Targets | null) => sceneRef.current?.highlight(t), []);
   const go = useCallback((t: Targets) => sceneRef.current?.travel(t, 800), []);
@@ -220,19 +232,25 @@ export function App() {
       {searchOpen && <Search searchables={() => sceneRef.current?.searchables() ?? []} onChoose={choose} onClose={closeSearch} />}
       {demoOpen && <DemoPanel live={state.mode === "live"} onEvent={demo} />}
       <Tooltip ref={tipRef} tip={tip} />
-      <UniverseCard state={state} />
+      <UniverseCard state={state} now={now} />
       {notice && <Card title={notice.title} hint={notice.text} />}
       <p className="sr-only" id="uDesc">{desc}</p>
     </div>
   );
 }
 
-/** The one universe-wide card, if any: demo with no token, a rejected token, or no repos. */
-function UniverseCard({ state }: { state: ControllerState }) {
-  const U = S.universe;
-  if (state.mode === "demo") return <Card title={U.demoNoToken.title} hint={U.demoNoToken.hint} snippet={U.demoNoToken.snippet} />;
-  if (state.mode !== "live") return null;
-  if (state.status.state === "error" && state.status.code === "bad_token") return <Card title={U.badToken.title} hint={U.badToken.hint} snippet={U.badToken.snippet} />;
-  if (state.status.state === "ok" && !state.repos.length) return <Card title={U.noRepos.title} hint={U.noRepos.hint} snippet={U.noRepos.snippet} />;
-  return null;
+/** The one universe-wide card, if any: demo with no token, a rejected token, no repos, GitHub silent, rate limit. */
+function UniverseCard({ state, now }: { state: ControllerState; now: number }) {
+  const c = universeCard({ mode: state.mode, status: state.status, repos: state.repos, now });
+  return c ? <Card title={c.title} hint={c.hint} snippet={c.snippet} place={c.place} /> : null;
+}
+
+/** The clock, ticking every `ms`: ages and countdowns on the cards. */
+function useNow(ms: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  return now;
 }

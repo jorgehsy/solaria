@@ -1,6 +1,7 @@
 /**
  * A tiny stand-in for GitHub's GraphQL API, for end-to-end tests. Solaria's server is started with
- * GITHUB_API_URL pointing here. Tests change the open issues with POST /__issues.
+ * GITHUB_API_URL pointing here. Tests change the open issues with POST /__issues, and make a repo
+ * fail with POST /__mode { repo, mode } (401, 403, 404, rate limit or a dropped connection).
  */
 import { createServer, type IncomingMessage } from "node:http";
 
@@ -10,7 +11,12 @@ const repos = new Map<string, Issue[]>([
     { number: 1, title: "Sort the sidebar" },
     { number: 2, title: "Empty-state text", assignees: ["alice"] },
   ]],
+  // errors.spec.ts: errs/docs is the did-you-mean for errs/dcos, so it must exist before the first poll.
+  ["errs/docs", [{ number: 1, title: "Write the guide" }]],
 ]);
+
+type Mode = "ok" | "401" | "403" | "404" | "rate" | "network";
+const modes = new Map<string, Mode>();
 
 const port = Number(process.env.FAKE_GITHUB_PORT ?? 4790);
 
@@ -33,11 +39,30 @@ createServer(async (req, res) => {
     repos.set(repo, issues);
     return json(200, { ok: true });
   }
+  if (req.method === "POST" && req.url === "/__mode") {
+    const { repo, mode } = JSON.parse(body) as { repo: string; mode: Mode };
+    modes.set(repo, mode);
+    return json(200, { ok: true });
+  }
   if (req.method === "GET" && req.url === "/__health") return json(200, { ok: true });
   if (req.method !== "POST" || req.url !== "/graphql") return json(404, { message: "Not Found" });
   if (!req.headers.authorization) return json(401, { message: "Bad credentials" });
-  const { variables } = JSON.parse(body) as { variables: { owner: string; name: string } };
+  const { variables } = JSON.parse(body) as { variables: { owner: string; name?: string } };
+  // The did-you-mean lookup after a not_found: the owner's repo names.
+  if (variables.name === undefined) {
+    const names = [...repos.keys()].filter((r) => r.startsWith(`${variables.owner}/`)).map((r) => ({ name: r.split("/")[1] }));
+    return json(200, { data: { repositoryOwner: names.length ? { repositories: { nodes: names } } : null } });
+  }
   const full = `${variables.owner}/${variables.name}`;
+  const mode = modes.get(full) ?? "ok";
+  if (mode === "network") { req.socket.destroy(); return; }
+  if (mode === "401") return json(401, { message: "Bad credentials" });
+  if (mode === "403") return json(403, { message: "Resource not accessible by personal access token" });
+  if (mode === "rate") {
+    res.writeHead(429, { "content-type": "application/json", "retry-after": "3" });
+    return res.end(JSON.stringify({ message: "API rate limit exceeded" }));
+  }
+  if (mode === "404") return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   const issues = repos.get(full);
   if (!issues) return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   return json(200, {

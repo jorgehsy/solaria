@@ -12,6 +12,7 @@ import { hash01, layoutUniverse, satelliteLabel } from "@solaria/universe";
 import type { IssueState, IssueView, LayoutInput, MapIssue, PullRequest, UniverseEvent, View } from "@solaria/universe";
 import type { SceneApi, Targets } from "../live/controller.ts";
 import { S } from "../ui/strings.ts";
+import type { GalaxyNote } from "../ui/galaxyNotes.ts";
 
 const TAU = Math.PI * 2;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -164,6 +165,9 @@ export class Scene implements SceneApi {
   private flight: gsap.core.Tween | null = null;
   private tour: { i: number; timer: ReturnType<typeof setTimeout> | undefined } | null = null;
   private cleanup: (() => void)[] = [];
+  /* Error and empty states (spec section 9): per repo look, card and quiet line. */
+  private notes = new Map<string, GalaxyNote>();
+  private noteEls = new Map<string, { fade: number; card: HTMLDivElement | null; quiet: HTMLDivElement | null }>();
   private readonly o: SceneOptions;
 
   constructor(o: SceneOptions) {
@@ -457,6 +461,7 @@ export class Scene implements SceneApi {
     if (ev) this.claimFor(ev);
     for (const r of view.repos) if (!this.galaxies.has(r)) this.galaxies.set(r, this.makeGalaxy(r));
     for (const [r, G] of this.galaxies) if (!view.repos.includes(r)) { this.destroyGalaxy(G); this.galaxies.delete(r); }
+    this.syncNotes();
     for (const [k, m] of view.maps) {
       let s = this.suns.get(k);
       if (!s) {
@@ -574,7 +579,8 @@ export class Scene implements SceneApi {
       if (!G || !p) continue;
       G.tx = p.x; G.ty = p.y; G.Rt = p.R; G.cloud = p.gas; G.foreign = p.foreign;
       G.count = input.openCount[repo] ?? 0;
-      const html = `${esc(repo)}<span>${esc(G.count ? S.galaxy.open(G.count) : S.galaxy.nothingOpen)}</span>`;
+      const sub = this.notes.get(repo)?.look === "ghost" ? S.galaxy.noData : G.count ? S.galaxy.open(G.count) : S.galaxy.nothingOpen;
+      const html = `${esc(repo)}<span>${esc(sub)}</span>`;
       if (G.label.innerHTML !== html) G.label.innerHTML = html;
       this.syncGas(G, input.gas.filter((g) => g.repo === repo).map((g) => g.key));
     }
@@ -1147,6 +1153,8 @@ export class Scene implements SceneApi {
       G.halo.alpha = 0.16 * gf;
       G.core.alpha = 0.22 * gf;
       G.rot.alpha = isG(G) ? 1 : dimF;
+      const gfade = this.fadeStep(G.repo, dt, calm);
+      if (gfade < 1) for (const o of [G.halo, G.core, G.rot]) o.alpha *= gfade;
       for (const s of G.stars) {
         if (s.vx || s.vy || s.dx || s.dy) {
           if (calm) { s.dx = s.dy = s.vx = s.vy = 0; }
@@ -1165,7 +1173,7 @@ export class Scene implements SceneApi {
         const on = !!G.cloud;
         if (G.cloud) { ga.base.position.set(G.x + G.cloud.x, G.y + G.cloud.y); ga.base.scale.set((G.cloud.r * 2.9) / 256); }
         ga.baseA += ((on ? 0.17 : 0) - ga.baseA) * Math.min(1, dt * 1.2);
-        ga.base.alpha = ga.baseA * (isG(G) ? 1 + hlA * 0.6 : dimF);
+        ga.base.alpha = ga.baseA * (isG(G) ? 1 + hlA * 0.6 : dimF) * gfade;
         if (!on && ga.baseA < 0.005) { ga.base.destroy(); ga.base = null; }
       }
       for (const [key, b] of ga.blobs) {
@@ -1175,7 +1183,7 @@ export class Scene implements SceneApi {
         const wob = calm ? 1 : 1 + Math.sin(T * 0.4 + b.h * TAU) * 0.08;
         b.sp.position.set(b.x + (calm ? 0 : Math.sin(T * 0.21 + b.h * 9) * 4), b.y + (calm ? 0 : Math.cos(T * 0.17 + b.h * 7) * 4));
         b.sp.scale.set((92 * wob) / 256);
-        b.sp.alpha = b.a * (isG(G) ? 1 + hlA * 0.6 : dimF);
+        b.sp.alpha = b.a * (isG(G) ? 1 + hlA * 0.6 : dimF) * gfade;
         if (!b.on && b.a < 0.004) { b.sp.destroy(); ga.blobs.delete(key); }
       }
     }
@@ -1207,6 +1215,8 @@ export class Scene implements SceneApi {
       s.orbit.position.set(s.x, s.y);
       s.orbit.alpha = Math.min(1, a);
       if (hl && !hl.suns.has(s)) for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= dimF;
+      const sfade = this.fadeOf(s.data.repo);
+      if (sfade < 1) for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= sfade;
     }
 
     // Planets and Gas
@@ -1248,6 +1258,8 @@ export class Scene implements SceneApi {
       } else { n.sat.alpha = 0; n.satGlow.alpha = 0; }
       if (hl && !hl.nodes.has(n)) for (const o of [n.body, n.glow, n.sat, n.satGlow]) o.alpha *= dimF;
       else if (hl) n.glow.alpha += hlA * 0.25;
+      const nfade = this.fadeOf(n.data.repo);
+      if (nfade < 1) for (const o of [n.body, n.glow, n.sat, n.satGlow]) o.alpha *= nfade;
       if (sat && !n.label) {
         n.label = document.createElement("span");
         n.label.className = "lab lab-sat";
@@ -1415,6 +1427,7 @@ export class Scene implements SceneApi {
       G.label.style.opacity = under ? "0" : String(Math.min(1, this.introA * 1.4) * (!hl || hl.gals.has(G) ? 1 : 1 - 0.65 * hlA));
       if (!under) boxes.push(gb);
     }
+    this.placeNotes(boxes);
     // Suns are obstacles too: a title never covers another Sun.
     const discs = [...this.suns.values()].filter((s) => !s.dying && s.ap > 0.3).map((s) => {
       const p = this.toScreen(s.x, s.y), r = s.r * sunK(k) + 6;
@@ -1450,6 +1463,77 @@ export class Scene implements SceneApi {
       if (fits) boxes.push(box);
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       el.style.opacity = fits ? String(Math.min(1, n.satA * 1.2) * (!hl || hl.nodes.has(n) ? 1 : 1 - 0.65 * hlA)) : "0";
+    }
+  }
+
+  /* ----- error and empty states ----- */
+  /** Per repo look, small card and quiet line, from the App (spec section 9). */
+  setNotes(notes: ReadonlyMap<string, GalaxyNote>): void {
+    this.notes = new Map(notes);
+    if (this.ok) { this.syncNotes(); this.layout(); }
+  }
+  private syncNotes() {
+    for (const [repo, e] of this.noteEls) {
+      if (this.galaxies.has(repo)) continue;
+      e.card?.remove(); e.quiet?.remove();
+      this.noteEls.delete(repo);
+    }
+    for (const [repo, G] of this.galaxies) {
+      const n = this.notes.get(repo);
+      let e = this.noteEls.get(repo);
+      if (!e) { e = { fade: lookFade(n), card: null, quiet: null }; this.noteEls.set(repo, e); }
+      G.label.dataset.look = n?.look ?? "normal";
+      const html = n?.card ? noteHtml(n.card) : "";
+      if (html && !e.card) {
+        e.card = document.createElement("div");
+        e.card.dataset.repo = repo;
+        this.o.labels.appendChild(e.card);
+      }
+      if (e.card && !html) { e.card.remove(); e.card = null; }
+      if (e.card) {
+        e.card.className = `lab lab-note${n?.look === "ghost" ? " ghost" : ""}`;
+        if (e.card.innerHTML !== html) e.card.innerHTML = html;
+      }
+      if (n?.quiet && !e.quiet) {
+        e.quiet = document.createElement("div");
+        e.quiet.className = "lab lab-quiet";
+        e.quiet.dataset.repo = repo;
+        this.o.labels.appendChild(e.quiet);
+      }
+      if (e.quiet && !n?.quiet) { e.quiet.remove(); e.quiet = null; }
+      if (e.quiet && n?.quiet && e.quiet.textContent !== n.quiet) e.quiet.textContent = n.quiet;
+    }
+  }
+  private fadeOf(repo: string): number {
+    return this.noteEls.get(repo)?.fade ?? 1;
+  }
+  private fadeStep(repo: string, dt: number, calm: boolean): number {
+    const e = this.noteEls.get(repo);
+    if (!e) return 1;
+    const to = lookFade(this.notes.get(repo));
+    e.fade += (to - e.fade) * (calm ? 1 : Math.min(1, dt * 2));
+    return e.fade;
+  }
+  /** Ghost cards sit on their Galaxy; the rest, and the quiet line, sit just under it. */
+  private placeNotes(boxes: { x0: number; x1: number; y0: number; y1: number }[]) {
+    const { W, H } = this;
+    const a = String(Math.min(1, this.introA * 1.4));
+    for (const [repo, e] of this.noteEls) {
+      const G = this.galaxies.get(repo);
+      if (!G) continue;
+      const ghost = this.notes.get(repo)?.look === "ghost";
+      let below = this.toScreen(G.x, G.y + G.R * 0.9).y + 8;
+      for (const el of [e.card, e.quiet]) {
+        if (!el) continue;
+        const w = el.offsetWidth || 200, h = el.offsetHeight || 40;
+        const c = this.toScreen(G.x, G.y);
+        const x = clamp(c.x - w / 2, 8, Math.max(8, W - w - 8));
+        const y = el === e.card && ghost ? clamp(c.y - h / 2, 8, Math.max(8, H - h - 8)) : clamp(below, 8, Math.max(8, H - h - 8));
+        if (!(el === e.card && ghost)) below = y + h + 6;
+        el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        el.style.opacity = a;
+        boxes.push({ x0: x, x1: x + w, y0: y, y1: y + h });
+      }
     }
   }
 
@@ -1605,6 +1689,18 @@ function radialTex(size: number, stops: [number, number][]): Texture {
     g.fillRect(0, 0, size, size);
   }
   return Texture.from(c);
+}
+
+/** How much of a Galaxy stays drawn: dim keeps the last good data readable; ghost is a faint outline. */
+function lookFade(n: GalaxyNote | undefined): number {
+  return n?.look === "ghost" ? 0.2 : n?.look === "dim" ? 0.42 : 1;
+}
+
+function noteHtml(c: NonNullable<GalaxyNote["card"]>): string {
+  return `<b>${esc(c.title)}</b>`
+    + (c.text ? `<p>${esc(c.text)}</p>` : "")
+    + (c.snippet ? `<pre class="snippet"><code>${esc(c.snippet)}</code></pre>` : "")
+    + (c.age ? `<p class="age">${esc(c.age)}</p>` : "");
 }
 
 function esc(s: string): string {

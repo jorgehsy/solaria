@@ -22,8 +22,10 @@ export const RepoStatus = z.strictObject({
   ok: z.boolean(),
   stale: z.boolean(),
   code: ErrorCode.optional(),
-  /** Extra words for the card, such as the variable to add (`GITHUB_TOKEN_ACME`). */
+  /** Extra words for the card: the variable to add (`GITHUB_TOKEN_ACME`), or the did-you-mean repo for `not_found`. */
   hint: z.string().optional(),
+  /** When this repo was last read fine (epoch ms): the age on a stale card. */
+  okAt: z.number().optional(),
 });
 export type RepoStatus = z.infer<typeof RepoStatus>;
 

@@ -7,7 +7,7 @@ const tok = (repo: string): TokenChoice => ({ kind: "token", repo, variable: "GI
 const issue = (n: number) => ({ number: n, title: `#${n}`, url: `u${n}`, createdAt: "2026-11-20T10:00:00Z", assignees: { nodes: [] } });
 const ok = (repo: string, ns: number[], remaining = 4000): FetchResult => ({ ok: true, reply: { nameWithOwner: repo, issues: ns.map(issue) }, rate: { remaining, limit: 5000, resetAt: 0, cost: 1 } });
 
-function setup(tokens: TokenChoice[], answers: Record<string, FetchResult[]>) {
+function setup(tokens: TokenChoice[], answers: Record<string, FetchResult[]>, suggest?: (repo: string, token: string) => Promise<string | null>) {
   let now = 1_000_000;
   const timers: { fn: () => void; ms: number }[] = [];
   const calls: string[] = [];
@@ -18,6 +18,7 @@ function setup(tokens: TokenChoice[], answers: Record<string, FetchResult[]>) {
     log: () => undefined,
     setTimer: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
     clearTimer: () => undefined,
+    suggest,
   });
   return { p, calls, timers, advance: (ms: number) => { now += ms; } };
 }
@@ -78,7 +79,7 @@ describe("Poller", () => {
     await p.pollOnce();
     await p.pollOnce();
     const s = p.snapshot();
-    expect(s.repos[0]).toEqual({ repo: "acme/web", ok: false, stale: true, code: "network" });
+    expect(s.repos[0]).toEqual({ repo: "acme/web", ok: false, stale: true, code: "network", okAt: 1_000_000 });
     expect(s.universe.issues["acme/web#1"]).toBeDefined();
     expect(s.status.state).toBe("ok");
   });
@@ -91,6 +92,32 @@ describe("Poller", () => {
     expect(calls).toEqual(["acme/web"]);
     expect(p.nextDelay()).toBe(120_000);
     expect(p.snapshot().repos[0]).toMatchObject({ code: "rate_limited" });
+  });
+
+  it("remembers when each repo was last read fine (okAt), for the stale card's age", async () => {
+    const { p, advance } = setup([tok("acme/web")], { "acme/web": [ok("acme/web", [1]), { ok: false, code: "network", message: "x", rate: null }] });
+    await p.pollOnce();
+    expect(p.snapshot().repos[0]).toEqual({ repo: "acme/web", ok: true, stale: false, okAt: 1_000_000 });
+    advance(90_000);
+    await p.pollOnce();
+    expect(p.snapshot().repos[0]).toMatchObject({ ok: false, stale: true, okAt: 1_000_000 });
+  });
+
+  it("asks once for a did-you-mean when a repo is not found and puts it in the hint", async () => {
+    const asked: string[] = [];
+    const nf: FetchResult = { ok: false, code: "not_found", message: "x", rate: null };
+    const { p } = setup([tok("acme/dcos")], { "acme/dcos": [nf, nf] }, async (repo) => { asked.push(repo); return "acme/docs"; });
+    await p.pollOnce();
+    await p.pollOnce();
+    expect(asked).toEqual(["acme/dcos"]);
+    expect(p.snapshot().repos[0]).toEqual({ repo: "acme/dcos", ok: false, stale: false, code: "not_found", hint: "acme/docs" });
+  });
+
+  it("leaves the hint out when there is no close match", async () => {
+    const nf: FetchResult = { ok: false, code: "not_found", message: "x", rate: null };
+    const { p } = setup([tok("acme/zzz")], { "acme/zzz": [nf] }, async () => null);
+    await p.pollOnce();
+    expect(p.snapshot().repos[0]).toEqual({ repo: "acme/zzz", ok: false, stale: false, code: "not_found" });
   });
 
   it("never reads a repo that has no token", async () => {
