@@ -6,6 +6,10 @@
 
 **Galaxy**: One configured repo, as it appears in the universe.
 
+**Focus**: The up to 3 Galaxies with the most open issues, drawn full size in the centre of the universe. Chosen automatically from every snapshot, never by clicking.
+
+**Horizon**: The ring of small Galaxies near the screen edges: every Galaxy not in Focus, labelled by repo name only.
+
 **Map**: An open issue whose title starts with `Map: ` or `Mapa: `. Groups other issues (its sub-issues). Drawn as a **Sun**.
 _Avoid_: epic, parent issue.
 
