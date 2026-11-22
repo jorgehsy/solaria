@@ -19,7 +19,7 @@ pnpm start
 
 - **Token**: a fine-grained, read-only token with Issues read and Pull requests read is enough. Repos of another owner can use their own `GITHUB_TOKEN_<OWNER>` (owner in capitals, `-` as `_`), which wins over `GITHUB_TOKEN` for that owner. The startup log prints which variable each repo uses (`owner/repo → GITHUB_TOKEN_ACME`), never the token.
 - **Config**: `solaria.config.json` is exactly `{ "repos": ["owner/repo", ...] }`. A broken file stops the server with the exact problem. Without the file, Solaria shows the demo Universe (the fictional `acme` team).
-- **Polling**: Solaria asks GitHub every 60 s while a browser tab is open and every 5 min otherwise, slowing down when under 20% of the hourly budget is left. If GitHub fails, the last good data stays on screen, marked stale.
+- **Polling**: Solaria asks GitHub every 60 s while a browser tab is open and every 5 min otherwise, slowing down when under 20% of the hourly budget is left or when many repos would spend more than 1,500 GraphQL points an hour (each repo costs about 4 points per read). If GitHub fails, the last good data stays on screen, marked stale.
 
 Contributors: `pnpm dev` runs the server on `127.0.0.1:4747` and Vite on `http://127.0.0.1:5173`. Press `D` for the demo panel.
 
@@ -31,7 +31,14 @@ Contributors: `pnpm dev` runs the server on `127.0.0.1:4747` and Vite on `http:/
 | `pnpm typecheck` | TypeScript in every workspace |
 | `pnpm test` | Vitest (`packages/contract`, `packages/universe`, `apps/server`) |
 | `pnpm e2e` | Playwright against the built app |
+| `pnpm --filter @solaria/server smoke` | Reads one real repo (`SMOKE_REPO`, needs `GITHUB_TOKEN`) with the server's query; CI runs it |
 
 Test-only variables: `SOLARIA_DIR` (folder holding `.env` and `solaria.config.json`), `GITHUB_API_URL` (GraphQL base, pointed at `e2e/fake-github.ts` in e2e) and `SOLARIA_POLL_MS` (fast poll interval).
 
 Layout: `apps/server` (Express), `apps/web` (React + Vite, PixiJS canvas in `src/scene`), `packages/contract` (zod schemas), `packages/universe` (pure model: diff, layout, demo), `packages/config` (shared tsconfig and ESLint). The build spec is [docs/spec.md](docs/spec.md).
+
+## More
+
+[ARCHITECTURE.md](ARCHITECTURE.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md)
+
+License: [MIT](LICENSE).

@@ -122,7 +122,7 @@ Token permissions: fine-grained Issues read + Pull requests read, plus Metadata 
 Poller:
 - One shared poller in the server, independent of how many browsers are open. Mandatory.
 - Cadence: 60 s while at least one live SSE connection is open (a hidden tab still counts); 5 min when none is. On a new connection while in slow mode, poll GitHub immediately.
-- Budget: about 600 points/h for 10 repos at 60 s, under the 1,500/h cap. GraphQL points are a separate 5,000/h bucket per user (not per token).
+- Budget: Solaria spends at most 1,500 points/h. The full query costs about 4 points per repo per poll (measured in slice 4; the 1-point figure was `closingIssuesReferences` alone), so up to 6 repos poll every 60 s and more repos stretch the interval to stay under the cap (10 repos: about 96 s). GraphQL points are a separate 5,000/h bucket per user (not per token).
 - Serialize requests. Read the rate-limit state on every response; below 20% remaining stretch the interval to 5 min; at 0 wait until reset; on 403/429 honour `retry-after`, else wait at least 60 s then back off exponentially. Surface this as `rate_limited` with the resume time (never retry in a loop).
 - Log per-hour point counts.
 

@@ -52,9 +52,9 @@ export const S = {
   },
   state: {
     todo: "To do",
-    doing: "Draft PR open",
+    draftPr: "Draft PR open",
     blocked: "Blocked",
-    review: "In review",
+    inReview: "In review",
     done: "Done",
   },
   galaxy: {
@@ -85,7 +85,7 @@ export const S = {
   },
   tip: {
     sunChip: (done: number, total: number) => `Map · ${done} of ${total} done`,
-    planetAssigned: (names: string) => ` · assigned to ${names}`,
+    planetAssigned: (names: string) => `· assigned to ${names}`,
     ref: (repo: string, n: number, mapTitle: string) => `${repo} #${n} · ${mapTitle}`,
     openOnGithub: "Open on GitHub",
     external: "external",

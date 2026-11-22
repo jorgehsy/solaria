@@ -91,6 +91,24 @@ describe("Poller", () => {
     expect(p.nextDelay()).toBe(300_000);
   });
 
+  it("stays at 60 s while a round fits the 1,500 points/h budget", async () => {
+    const repos = ["a/1", "a/2", "a/3", "a/4", "a/5", "a/6"];
+    const cost4 = (repo: string): FetchResult => ({ ok: true, reply: { nameWithOwner: repo, issues: [] }, rate: { remaining: 4000, limit: 5000, resetAt: 0, cost: 4 } });
+    const { p } = setup(repos.map(tok), Object.fromEntries(repos.map((r) => [r, [cost4(r)]])));
+    p.addWatcher();
+    await p.pollOnce();
+    expect(p.nextDelay()).toBe(60_000); // 24 points a round, 1,440 an hour
+  });
+
+  it("stretches the interval so a costly round stays under 1,500 points/h", async () => {
+    const repos = Array.from({ length: 10 }, (_, i) => `a/${i}`);
+    const cost4 = (repo: string): FetchResult => ({ ok: true, reply: { nameWithOwner: repo, issues: [] }, rate: { remaining: 4000, limit: 5000, resetAt: 0, cost: 4 } });
+    const { p } = setup(repos.map(tok), Object.fromEntries(repos.map((r) => [r, [cost4(r)]])));
+    p.addWatcher();
+    await p.pollOnce();
+    expect(p.nextDelay()).toBe(96_000); // 40 points a round: 37.5 rounds an hour
+  });
+
   it("keeps a failing repo's last good data, marked stale", async () => {
     const { p } = setup([tok("acme/web"), tok("acme/api")], {
       "acme/web": [ok("acme/web", [1]), { ok: false, code: "network", message: "x", rate: null }],
