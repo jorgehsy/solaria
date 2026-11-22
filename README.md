@@ -19,7 +19,6 @@ pnpm start
 
 - **Token**: a fine-grained, read-only token with Issues read and Pull requests read is enough. Repos of another owner can use their own `GITHUB_TOKEN_<OWNER>` (owner in capitals, `-` as `_`), which wins over `GITHUB_TOKEN` for that owner. The startup log prints which variable each repo uses (`owner/repo → GITHUB_TOKEN_ACME`), never the token.
 - **Config**: `solaria.config.json` is exactly `{ "repos": ["owner/repo", ...] }`. A broken file stops the server with the exact problem. Without the file, Solaria shows the demo Universe (the fictional `acme` team).
-
 - **Polling**: Solaria asks GitHub every 60 s while a browser tab is open and every 5 min otherwise, slowing down when under 20% of the hourly budget is left. If GitHub fails, the last good data stays on screen, marked stale.
 
 Contributors: `pnpm dev` runs the server on `127.0.0.1:4747` and Vite on `http://127.0.0.1:5173`. Press `D` for the demo panel.
