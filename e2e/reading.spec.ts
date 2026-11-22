@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { FAKE_GITHUB } from "../playwright.config.ts";
 
 /** Reading rules (spec section 5) against the fake GitHub repo `acme/maps`. */
+test.beforeEach(async ({ request }) => {
+  await fetch(`${FAKE_GITHUB}/__repo`, { method: "POST", body: JSON.stringify({ repo: "acme/maps", reset: true }) });
+  await expect.poll(async () => Object.keys((await (await request.get("/api/snapshot")).json()).universe.prs)).toEqual(["acme/maps!20", "acme/maps!21"]);
+});
+
 test("a Map, its Planets, blockers and PRs arrive in the snapshot", async ({ request }) => {
   let u: { maps: Record<string, { title: string }>; issues: Record<string, { map: string | null; closed: boolean; blockers: string[] }>; prs: Record<string, { draft: boolean; closes: string[] }>; closedPrs: Record<string, { merged: boolean }> } | undefined;
   await expect.poll(async () => {

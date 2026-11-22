@@ -1,7 +1,8 @@
 /**
  * A tiny stand-in for GitHub's GraphQL API, for end-to-end tests. Solaria's server is started with
  * GITHUB_API_URL pointing here. Tests change the open issues with POST /__issues.
- * `acme/maps` is a fixed repo for the reading rules (slice 4): a Map, closed children, blockers, PRs, assignees.
+ * `acme/maps` is a repo for the reading rules (slice 4): a Map, closed children, blockers, PRs, assignees.
+ * Tests replace a repo's issues and PRs with POST /__repo, and put the seed back with `{ repo, reset: true }`.
  */
 import { createServer, type IncomingMessage } from "node:http";
 
@@ -35,6 +36,8 @@ const closedPrs = new Map<string, Pr[]>([
   ["acme/maps", [{ number: 19, title: "Venue contract", merged: true, closes: [{ number: 4 }] }]],
 ]);
 
+const seed = structuredClone({ repos: [...repos], prs: [...prs], closedPrs: [...closedPrs] });
+
 const T = "2026-11-20T10:00:00Z";
 const url = (repo: string, kind: string, n: number) => `https://github.com/${repo}/${kind}/${n}`;
 const ref = (here: string) => (r: Ref) => ({ number: r.number, repository: { nameWithOwner: r.repo ?? here } });
@@ -59,6 +62,18 @@ createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/__issues") {
     const { repo, issues } = JSON.parse(body) as { repo: string; issues: Issue[] };
     repos.set(repo, issues);
+    return json(200, { ok: true });
+  }
+  if (req.method === "POST" && req.url === "/__repo") {
+    const r = JSON.parse(body) as { repo: string; reset?: boolean; issues?: Issue[]; prs?: Pr[]; closedPrs?: Pr[] };
+    const pick = <T>(list: [string, T][], v: T | undefined, map: Map<string, T>) => {
+      const value = r.reset ? structuredClone(list.find(([k]) => k === r.repo)?.[1]) : v;
+      if (value === undefined) map.delete(r.repo);
+      else map.set(r.repo, value);
+    };
+    pick(seed.repos, r.issues, repos);
+    pick(seed.prs, r.prs, prs);
+    pick(seed.closedPrs, r.closedPrs, closedPrs);
     return json(200, { ok: true });
   }
   if (req.method === "GET" && req.url === "/__health") return json(200, { ok: true });
