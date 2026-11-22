@@ -117,7 +117,6 @@ describe("buildUniverse", () => {
       expect(u.issues["other/lib#5"]).toMatchObject({ map: "acme/web#1", closed: true, external: true });
       expect(u.issues["acme/web#2"]?.external).toBeUndefined();
       expect(u.prs["acme/web!50"]?.closes).toEqual([]);
-      expect(u.prs["acme/web!50"]?.outsideCloses).toEqual(["other/lib#4"]);
       expect(states(u)).toMatchObject({ "other/lib#4": "todo", "other/lib#5": "done" });
       expect(u.repos).toEqual(["acme/web"]);
     });
@@ -209,17 +208,9 @@ describe("buildUniverse", () => {
       expect(satelliteLabel(u.issues["acme/web#1"]?.assignees ?? [])).toEqual({ first: "alice", rest: 2 });
     });
 
-    it("drops PR links to issues not in the Universe and keeps links outside the config as text", () => {
-      const u = build({ "acme/web": web({ issues: [issue(1, "Work")], prs: [
-        { ...pr(50, false, 1, 99), closingIssuesReferences: { nodes: [ref("acme/web", 1), ref("acme/web", 99), ref("other/lib", 1), ref("Other/Lib", 1)] } },
-        pr(51, false, 1),
-      ] }) });
-      expect(UniverseData.parse(u)).toEqual(u);
+    it("drops PR links to repos outside the config and to issues not in the Universe", () => {
+      const u = build({ "acme/web": web({ issues: [issue(1, "Work")], prs: [{ ...pr(50, false, 1, 99), closingIssuesReferences: { nodes: [ref("acme/web", 1), ref("acme/web", 99), ref("other/lib", 1)] } }] }) });
       expect(u.prs["acme/web!50"]?.closes).toEqual(["acme/web#1"]);
-      expect(u.prs["acme/web!50"]?.outsideCloses).toEqual(["other/lib#1"]);
-      expect(u.prs["acme/web!50"]?.closes.concat(u.prs["acme/web!50"]?.outsideCloses ?? [])).not.toContain("acme/web#99");
-      expect(u.prs["acme/web!51"]).not.toHaveProperty("outsideCloses");
-      expect(states(u)["acme/web#1"]).toBe("review");
     });
   });
 
@@ -230,7 +221,7 @@ describe("buildUniverse", () => {
     ] }) });
     expect(UniverseData.parse(u)).toEqual(u);
     expect(u.closedPrs).toEqual({
-      "acme/web!40": { key: "acme/web!40", repo: "acme/web", number: 40, title: "Merged", url: "u40", merged: true, at: Date.parse("2026-11-21T09:00:00Z"), closes: ["acme/web#5"], outsideCloses: ["other/lib#1"] },
+      "acme/web!40": { key: "acme/web!40", repo: "acme/web", number: 40, title: "Merged", url: "u40", merged: true, at: Date.parse("2026-11-21T09:00:00Z"), closes: ["acme/web#5"] },
       "acme/web!41": { key: "acme/web!41", repo: "acme/web", number: 41, title: "Dropped", url: "u41", merged: false, at: Date.parse("2026-11-21T08:00:00Z"), closes: [] },
     });
   });

@@ -56,13 +56,10 @@ export const Issue = z.strictObject({
 export const PullRequest = z.strictObject({
   key: Key, repo: RepoName, number: z.number().int(), title: z.string(), url: z.string(),
   draft: z.boolean(), closes: z.array(Key), created: z.number(),
-  /** Closing refs to repos outside the config, `owner/repo#N`, shown as plain text in the log. */
-  outsideCloses: z.array(z.string()).optional(),
 });
 export const ClosedPullRequest = z.strictObject({
   key: Key, repo: RepoName, number: z.number().int(), title: z.string(), url: z.string(),
   merged: z.boolean(), at: z.number(), closes: z.array(Key),
-  outsideCloses: z.array(z.string()).optional(),
 });
 /** The Universe data, same shape as `@solaria/universe`'s `Universe`. */
 export const UniverseData = z.strictObject({

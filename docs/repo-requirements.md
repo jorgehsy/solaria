@@ -83,7 +83,7 @@ Closes #42
 
 Text that merely mentions an issue number, such as "see #42", is not a link.
 
-A PR that closes an issue in a repo not in `solaria.config.json` does not change that issue. The ref shows as plain text in the PR's log line, such as `PR #12 opened, closes other/lib#4`.
+A PR that closes an issue in a repo not in `solaria.config.json` does not change that issue. The ref is not shown anywhere: the PR still appears, but its log line reads `PR #12 opened` with no ref. Add that repo to the config to see the link.
 
 If you skip this, issues with PRs stay To do, and Solaria cannot tell that work is under way.
 

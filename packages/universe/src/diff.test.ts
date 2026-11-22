@@ -67,33 +67,6 @@ describe("diff", () => {
     expect(diff(a, b)).toMatchObject([{ type: "comet", pr: "acme/web!60", closes: ["acme/web#2"], at: 70 }]);
   });
 
-  it("carries a new PR's closing refs outside the Universe as text, and only when there are some", () => {
-    const a = universe();
-    const b = cloneUniverse(a);
-    addPr(b, R, 60, { outsideCloses: ["other/lib#4"] });
-    addPr(b, R, 61);
-    const evs = diff(a, b);
-    expect(evs[0]).toMatchObject({ type: "comet", pr: "acme/web!60", closes: [], outside: ["other/lib#4"] });
-    expect(evs[1]).not.toHaveProperty("outside");
-  });
-
-  it("carries closing refs outside the Universe on a Supernova and on a merged PR that closed nothing inside", () => {
-    const a = universe();
-    addIssue(a, R, 2);
-    addPr(a, R, 60, { closes: ["acme/web#2"], outsideCloses: ["other/lib#4"] });
-    addPr(a, R, 61, { outsideCloses: ["other/lib#5"] });
-    const b = cloneUniverse(a);
-    delete b.prs["acme/web!60"];
-    delete b.prs["acme/web!61"];
-    b.issues["acme/web#2"]!.closed = true;
-    addClosedPr(b, R, 60, { merged: true, at: 77, closes: ["acme/web#2"], outsideCloses: ["other/lib#4"] });
-    addClosedPr(b, R, 61, { merged: true, at: 78, outsideCloses: ["other/lib#5"] });
-    expect(diff(a, b)).toMatchObject([
-      { type: "supernova", pr: "acme/web!60", issues: ["acme/web#2"], outside: ["other/lib#4"] },
-      { type: "prgone", pr: "acme/web!61", merged: true, outside: ["other/lib#5"] },
-    ]);
-  });
-
   it("emits a Close when an issue closes", () => {
     const a = universe();
     addMap(a, R, 1, "Dark mode");
