@@ -1,6 +1,6 @@
 import type { ErrorCode } from "@solaria/contract";
 import { REPO_QUERY } from "./query.ts";
-import type { GqlIssue, GqlRepoPage, RepoReply } from "./query.ts";
+import type { GqlClosedPullRequest, GqlIssue, GqlPullRequest, GqlRepoPage, RepoReply } from "./query.ts";
 
 export const DEFAULT_API_URL = "https://api.github.com";
 
@@ -27,6 +27,7 @@ const MAX_PAGES = 10;
 
 /**
  * Read one repo with the GraphQL query, following pages of open issues.
+ * Pull requests come with the first page only.
  * Maps every failure onto one of the five error codes, never throws.
  */
 export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: string; fetch?: FetchLike; timeoutMs?: number } = {}): Promise<FetchResult> {
@@ -34,6 +35,8 @@ export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: st
   const url = graphqlUrl(opts.apiUrl ?? DEFAULT_API_URL);
   const doFetch: FetchLike = opts.fetch ?? (globalThis.fetch as unknown as FetchLike);
   const issues: GqlIssue[] = [];
+  let prs: GqlPullRequest[] = [];
+  let closedPrs: GqlClosedPullRequest[] = [];
   let nameWithOwner = repo;
   let after: string | null = null;
   let rate: RateInfo | null = null;
@@ -43,7 +46,7 @@ export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: st
       res = await doFetch(url, {
         method: "POST",
         headers: { authorization: `bearer ${token}`, "content-type": "application/json", "user-agent": "solaria" },
-        body: JSON.stringify({ query: REPO_QUERY, variables: { owner, name, after } }),
+        body: JSON.stringify({ query: REPO_QUERY, variables: { owner, name, after, withPrs: page === 0 } }),
         signal: AbortSignal.timeout(opts.timeoutMs ?? 20_000),
       });
     } catch (e) {
@@ -77,10 +80,14 @@ export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: st
     if (!r) return { ok: false, code: "not_found", message: "Repo not found", rate };
     nameWithOwner = r.nameWithOwner;
     issues.push(...r.issues.nodes);
+    if (page === 0) {
+      prs = r.pullRequests?.nodes ?? [];
+      closedPrs = r.closedPullRequests?.nodes ?? [];
+    }
     if (!r.issues.pageInfo.hasNextPage || !r.issues.pageInfo.endCursor) break;
     after = r.issues.pageInfo.endCursor;
   }
-  return { ok: true, reply: { nameWithOwner, issues }, rate };
+  return { ok: true, reply: { nameWithOwner, issues, prs, closedPrs }, rate };
 }
 
 export function graphqlUrl(apiUrl: string): string {
