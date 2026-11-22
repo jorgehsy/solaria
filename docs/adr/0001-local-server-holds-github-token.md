@@ -6,3 +6,4 @@ The original artifact read GitHub through the claude.ai connector, which does no
 
 - Solaria needs Node to run; it is not a single static HTML file.
 - The server is the only thing that talks to GitHub; the browser talks only to the server.
+- Repos from several owners may each use their own token (`GITHUB_TOKEN_<OWNER>`, owner in capitals, `-` as `_`), with `GITHUB_TOKEN` as the fallback for owners without one. A fine-grained token reads private repos of one owner only, so this keeps people read-only without forcing a classic token.
