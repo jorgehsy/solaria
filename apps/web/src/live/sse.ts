@@ -13,7 +13,7 @@ export function followLive(controller: Controller, url = "/api/events"): () => v
   });
   es.addEventListener(SSE_FRESH, (e) => {
     const note = FreshNote.safeParse(JSON.parse((e as MessageEvent<string>).data));
-    if (note.success) controller.fresh(note.data.checkedAt);
+    if (note.success) controller.fresh(note.data.checkedAt, note.data.pollMs);
   });
   return () => es.close();
 }

@@ -25,7 +25,7 @@ export interface PollerOptions {
   clearTimer?: (t: unknown) => void;
 }
 
-export type PollerEvent = { kind: "snapshot"; snapshot: LiveSnapshot } | { kind: "fresh"; checkedAt: number };
+export type PollerEvent = { kind: "snapshot"; snapshot: LiveSnapshot } | { kind: "fresh"; checkedAt: number; pollMs: number };
 
 interface RepoState {
   repo: string;
@@ -134,13 +134,22 @@ export class Poller {
   nextDelay(): number {
     const now = this.o.now();
     if (this.pausedUntil > now) return this.pausedUntil - now;
-    let ms = this.watchers > 0 ? this.o.fastMs : this.o.slowMs;
+    let ms = this.cadence(this.watchers > 0);
+    // Back-off doubles from the fast interval (60 s in real use; the end-to-end tests shorten it).
+    if (this.failures > 0) ms = Math.max(ms, Math.min(BACKOFF_MAX_MS, this.o.fastMs * 2 ** (this.failures - 1)));
+    return ms;
+  }
+
+  /**
+   * The regular interval between rounds, before any pause or back-off: what the status tooltip
+   * shows. `watched` is true while a browser is connected.
+   */
+  cadence(watched = true): number {
+    let ms = watched ? this.o.fastMs : this.o.slowMs;
     if (this.rate && this.rate.limit > 0 && this.rate.remaining < this.rate.limit * 0.2) ms = Math.max(ms, this.o.slowMs);
     // Many repos: space rounds out so the hour stays within budget (scaled like the back-off when
     // the end-to-end tests shorten the fast interval).
     if (this.roundPoints > 0) ms = Math.max(ms, Math.ceil(((this.roundPoints * HOUR) / POINTS_PER_HOUR) * (this.o.fastMs / FAST_MS)));
-    // Back-off doubles from the fast interval (60 s in real use; the end-to-end tests shorten it).
-    if (this.failures > 0) ms = Math.max(ms, Math.min(BACKOFF_MAX_MS, this.o.fastMs * 2 ** (this.failures - 1)));
     return ms;
   }
 
@@ -195,7 +204,7 @@ export class Poller {
     if (key !== this.lastKey) {
       this.lastKey = key;
       this.emit({ kind: "snapshot", snapshot: next });
-    } else this.emit({ kind: "fresh", checkedAt: this.checkedAt });
+    } else this.emit({ kind: "fresh", checkedAt: this.checkedAt, pollMs: next.pollMs });
   }
 
   private build(): LiveSnapshot {
@@ -207,6 +216,7 @@ export class Poller {
       status: universeStatus(repos, this.checkedAt === 0 && this.repos.some((r) => r.token), this.pausedUntil > this.o.now() ? this.pausedUntil : 0),
       repos,
       checkedAt: this.checkedAt,
+      pollMs: this.cadence(),
       universe: buildUniverse(this.repos.map((r) => r.repo), replies, this.checkedAt),
     };
   }

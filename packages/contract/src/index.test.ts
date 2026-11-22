@@ -35,6 +35,7 @@ describe("LiveSnapshot", () => {
     status: { state: "error", code: "bad_token", hint: "GITHUB_TOKEN" },
     repos: [{ repo: "acme/web", ok: false, stale: false, code: "bad_token", hint: "GITHUB_TOKEN_ACME" }],
     checkedAt: 0,
+    pollMs: 60_000,
     universe: { at: 0, repos: ["acme/web"], maps: {}, issues: {}, prs: {}, closedPrs: {} },
   };
   it("parses a live snapshot", () => {

@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
 import type { Mode } from "../live/controller.ts";
 import { S } from "./strings.ts";
-import { statusAgo } from "./format.ts";
-
-/** No new data for this long reads as old (spec section 6). */
-const OLD_MS = 3 * 60_000;
+import { cadenceText, oldAfter, statusAgo } from "./format.ts";
 
 interface Props {
   mode: Mode;
   checkedAt: number;
+  /** How often the server checks GitHub (ms); 0 when unknown. */
+  pollMs: number;
   error: boolean;
   /** Repos showing their last good data. */
   stale: string[];
 }
 
 /** Wordmark (orbit badge), the Universe title and the status line. */
-export function Header({ mode, checkedAt, error, stale }: Props) {
+export function Header({ mode, checkedAt, pollMs, error, stale }: Props) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 10_000);
@@ -24,8 +23,8 @@ export function Header({ mode, checkedAt, error, stale }: Props) {
   const loading = mode === "loading" || (mode === "live" && !checkedAt && !error);
   const live = mode === "live" && checkedAt > 0;
   const ago = statusAgo(checkedAt, Math.max(now, checkedAt));
-  const old = live && now - checkedAt > OLD_MS;
-  const why = stale.length ? S.statusTip.stale(stale.join(", "), ago) : old ? S.statusTip.old(ago) : S.statusTip.ok;
+  const old = live && now - checkedAt > oldAfter(pollMs);
+  const why = stale.length ? S.statusTip.stale(stale.join(", "), ago) : old ? S.statusTip.old(ago) : S.statusTip.ok(cadenceText(pollMs || 60_000));
   return (
     <header className="brand" data-chrome>
       <div className="wordmark">

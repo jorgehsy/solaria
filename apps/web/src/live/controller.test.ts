@@ -24,7 +24,7 @@ function uni(at: number, numbers: number[]): Universe {
 
 function snap(checkedAt: number, numbers: number[]): LiveSnapshot {
   return {
-    mode: "live", checkedAt, status: { state: "ok" }, repos: [{ repo: REPO, ok: true, stale: false }],
+    mode: "live", checkedAt, pollMs: 60_000, status: { state: "ok" }, repos: [{ repo: REPO, ok: true, stale: false }],
     universe: uni(checkedAt, numbers),
   } as LiveSnapshot;
 }
@@ -106,8 +106,8 @@ describe("Controller: live snapshots", () => {
   it("measures the gap from the last time the data was checked, including still-fresh notes", () => {
     const { c, scene } = setup();
     c.live(snap(T0, [1]));
-    c.fresh(T0 + 6 * MIN);
-    c.fresh(T0 + 12 * MIN);
+    c.fresh(T0 + 6 * MIN, 60_000);
+    c.fresh(T0 + 12 * MIN, 60_000);
     c.live(snap(T0 + 13 * MIN, [1, 2]));
     expect(c.pending()).toBe(1);
     c.pump(1e12);

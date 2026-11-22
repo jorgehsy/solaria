@@ -22,6 +22,22 @@ export function statusAgo(at: number, now = Date.now()): string {
   return S.time.hourAgo(Math.floor(m / 60));
 }
 
+/** Poll cadence for `statusTip.ok`: minute, 96 s, 5 min. */
+export function cadenceText(ms: number): string {
+  const s = Math.round(ms / 1000);
+  if (s <= 60) return S.time.everyMinute;
+  if (s < 120) return S.time.everySec(s);
+  return S.time.everyMin(Math.round(s / 60));
+}
+
+/**
+ * No new data for this long reads as old (spec section 6): 3 min at the usual 60 s cadence, and two
+ * minutes past the cadence once the server polls less often to stay within the rate budget.
+ */
+export function oldAfter(pollMs: number): number {
+  return Math.max(3 * 60_000, pollMs + 2 * 60_000);
+}
+
 /** `#12` in the same repo, `api#12` in another repo of the same owner, `owner/repo#12` otherwise. */
 export function refText(key: string, fromRepo: string): string {
   const repo = repoOf(key);

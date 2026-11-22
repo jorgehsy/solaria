@@ -7,7 +7,7 @@ import { createApp } from "./app.ts";
 import type { LiveFeed } from "./app.ts";
 
 const live = (n: number): LiveSnapshot => ({
-  mode: "live", status: { state: "ok" }, repos: [{ repo: "acme/web", ok: true, stale: false }], checkedAt: n,
+  mode: "live", status: { state: "ok" }, repos: [{ repo: "acme/web", ok: true, stale: false }], checkedAt: n, pollMs: 60_000,
   universe: { at: n, repos: ["acme/web"], maps: {}, issues: {}, prs: {}, closedPrs: {} },
 });
 
@@ -51,8 +51,8 @@ describe("GET /api/events", () => {
     expect(watchers).toBe(1);
     current = live(2);
     for (const fn of listeners) fn({ kind: "snapshot", snapshot: current });
-    for (const fn of listeners) fn({ kind: "fresh", checkedAt: 3 });
-    await until('{"checkedAt":3}');
+    for (const fn of listeners) fn({ kind: "fresh", checkedAt: 3, pollMs: 60_000 });
+    await until('{"checkedAt":3,"pollMs":60000}');
     expect(text).toContain('"checkedAt":2');
     expect(text).toContain("event: fresh");
     ctrl.abort();

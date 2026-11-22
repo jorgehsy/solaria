@@ -219,7 +219,7 @@ export function App() {
       <div className="gl" ref={glRef} aria-hidden="true" />
       <div className="labels" ref={labelsRef} />
       {state.mode === "demo" && <div className="veil" aria-hidden="true" />}
-      <Header mode={state.mode} checkedAt={state.checkedAt} error={state.status.state === "error"} stale={state.repos.filter((r) => r.stale).map((r) => r.repo)} />
+      <Header mode={state.mode} checkedAt={state.checkedAt} pollMs={state.pollMs} error={state.status.state === "error"} stale={state.repos.filter((r) => r.stale).map((r) => r.repo)} />
       <div className="tools" data-chrome>
         <button ref={searchBtn} className="tool" type="button" aria-label={S.tool.search} title={S.tool.search} aria-expanded={searchOpen} aria-controls="search" onClick={() => setSearchOpen((o) => !o)}><IconSearch /></button>
         <button className="tool" type="button" aria-pressed={tourOn} aria-label={tourLabel} title={tourLabel} onClick={() => setTour(!tourOn)}><IconTour /></button>

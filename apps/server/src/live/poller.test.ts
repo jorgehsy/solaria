@@ -89,6 +89,7 @@ describe("Poller", () => {
     p.addWatcher();
     await p.pollOnce();
     expect(p.nextDelay()).toBe(300_000);
+    expect(p.snapshot().pollMs).toBe(300_000);
   });
 
   it("stays at 60 s while a round fits the 1,500 points/h budget", async () => {
@@ -98,6 +99,7 @@ describe("Poller", () => {
     p.addWatcher();
     await p.pollOnce();
     expect(p.nextDelay()).toBe(60_000); // 24 points a round, 1,440 an hour
+    expect(p.snapshot().pollMs).toBe(60_000);
   });
 
   it("stretches the interval so a costly round stays under 1,500 points/h", async () => {
@@ -107,6 +109,7 @@ describe("Poller", () => {
     p.addWatcher();
     await p.pollOnce();
     expect(p.nextDelay()).toBe(96_000); // 40 points a round: 37.5 rounds an hour
+    expect(p.snapshot().pollMs).toBe(96_000);
   });
 
   it("keeps a failing repo's last good data, marked stale", async () => {
@@ -129,6 +132,7 @@ describe("Poller", () => {
     await p.pollOnce();
     expect(calls).toEqual(["acme/web"]);
     expect(p.nextDelay()).toBe(120_000);
+    expect(p.snapshot().pollMs).toBe(60_000); // a pause shows as resumeAt, not as the cadence
     expect(p.snapshot().repos[0]).toMatchObject({ code: "rate_limited" });
   });
 

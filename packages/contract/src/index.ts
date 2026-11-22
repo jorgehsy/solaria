@@ -84,6 +84,8 @@ export const LiveSnapshot = z.strictObject({
   repos: z.array(RepoStatus),
   /** When GitHub was last checked (epoch ms), for "updated N ago". 0 before the first poll. */
   checkedAt: z.number(),
+  /** How often the server checks GitHub while a browser is open (ms). Grows past 60 s to stay within the rate budget. */
+  pollMs: z.number(),
   universe: UniverseData,
 });
 export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
@@ -92,8 +94,8 @@ export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
 export const ServerSnapshot = z.discriminatedUnion("mode", [DemoSnapshot, LiveSnapshot]);
 export type ServerSnapshot = z.infer<typeof ServerSnapshot>;
 
-/** SSE: nothing changed on the last poll; the data is fresh as of `checkedAt`. */
-export const FreshNote = z.strictObject({ checkedAt: z.number() });
+/** SSE: nothing changed on the last poll; the data is fresh as of `checkedAt`; `pollMs` as on the snapshot. */
+export const FreshNote = z.strictObject({ checkedAt: z.number(), pollMs: z.number() });
 export type FreshNote = z.infer<typeof FreshNote>;
 
 /** SSE event names on `GET /api/events`. */
