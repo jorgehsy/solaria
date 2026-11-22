@@ -25,7 +25,7 @@ const uniqueRefs = (xs: string[]): string[] => {
  * - Every other open issue is Gas.
  * - Blockers come from `Blocked by:` body lines and GitHub's native blocked-by; PR links only from
  *   GitHub's closing references. Refs to repos outside the config never count: blockers there are kept
- *   as plain text (`outsideBlockers`) for the detail card; PR links there are dropped.
+ *   as plain text (`outsideBlockers`) for the detail card; PR links there as plain text (`outsideCloses`) for the log.
  * The state itself is derived in `@solaria/universe` (`issueStates`), not stored.
  * Galaxies keep config order; a repo without a reply (failed, never read) is still a Galaxy, with no issues.
  */
@@ -112,18 +112,25 @@ export function buildUniverse(repos: readonly string[], replies: ReadonlyMap<str
     if (outside) issue.outsideBlockers = outside;
   }
 
+  // Closing refs to repos outside the config: kept as text for the log, absent when there are none.
+  const outsideOfPr = (refs: GqlRef[]): { outsideCloses?: string[] } => {
+    const out = uniqueRefs(refs.filter((r) => !inUniverse(r.repository.nameWithOwner)).map((r) => issueKey(r.repository.nameWithOwner, r.number)));
+    return out.length ? { outsideCloses: out } : {};
+  };
   for (const repo of repos) {
     const r = replies.get(repo);
     for (const p of r?.prs ?? []) {
       const key = prKey(repo, p.number);
-      const closes = unique((p.closingIssuesReferences?.nodes ?? []).map(keyOf).filter((k): k is string => !!k && present(k)));
-      u.prs[key] = { key, repo, number: p.number, title: p.title, url: p.url, draft: p.isDraft, closes, created: time(p.createdAt) };
+      const refs = p.closingIssuesReferences?.nodes ?? [];
+      const closes = unique(refs.map(keyOf).filter((k): k is string => !!k && present(k)));
+      u.prs[key] = { key, repo, number: p.number, title: p.title, url: p.url, draft: p.isDraft, closes, ...outsideOfPr(refs), created: time(p.createdAt) };
     }
     for (const p of r?.closedPrs ?? []) {
       const key = prKey(repo, p.number);
       // Issues a closed PR closed are usually closed now too, so they are kept even when absent.
-      const closes = unique((p.closingIssuesReferences?.nodes ?? []).map(keyOf).filter((k): k is string => !!k));
-      u.closedPrs[key] = { key, repo, number: p.number, title: p.title, url: p.url, merged: p.merged, at: time(p.mergedAt ?? p.closedAt), closes };
+      const refs = p.closingIssuesReferences?.nodes ?? [];
+      const closes = unique(refs.map(keyOf).filter((k): k is string => !!k));
+      u.closedPrs[key] = { key, repo, number: p.number, title: p.title, url: p.url, merged: p.merged, at: time(p.mergedAt ?? p.closedAt), closes, ...outsideOfPr(refs) };
     }
   }
   return u;

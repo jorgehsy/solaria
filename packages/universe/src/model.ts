@@ -52,6 +52,8 @@ export interface PullRequest {
   draft: boolean;
   /** Issues GitHub says this pull request closes. */
   closes: IssueKey[];
+  /** Closing refs to repos outside the Universe, as `owner/repo#N`: plain text in the log, never state. */
+  outsideCloses?: string[];
   created: number;
 }
 
@@ -64,6 +66,7 @@ export interface ClosedPullRequest {
   merged: boolean;
   at: number;
   closes: IssueKey[];
+  outsideCloses?: string[];
 }
 
 export interface Universe {
@@ -91,8 +94,8 @@ export function cloneUniverse(u: Universe): Universe {
     repos: u.repos.slice(),
     maps: each(u.maps, (m) => ({ ...m, assignees: m.assignees.slice() })),
     issues: each(u.issues, (i) => ({ ...i, blockers: i.blockers.slice(), assignees: i.assignees.slice(), ...(i.outsideBlockers ? { outsideBlockers: i.outsideBlockers.slice() } : {}) })),
-    prs: each(u.prs, (p) => ({ ...p, closes: p.closes.slice() })),
-    closedPrs: each(u.closedPrs, (p) => ({ ...p, closes: p.closes.slice() })),
+    prs: each(u.prs, (p) => ({ ...p, closes: p.closes.slice(), ...(p.outsideCloses ? { outsideCloses: p.outsideCloses.slice() } : {}) })),
+    closedPrs: each(u.closedPrs, (p) => ({ ...p, closes: p.closes.slice(), ...(p.outsideCloses ? { outsideCloses: p.outsideCloses.slice() } : {}) })),
   };
 }
 

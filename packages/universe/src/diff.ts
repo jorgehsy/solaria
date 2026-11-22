@@ -14,11 +14,11 @@ export type UniverseEvent =
   | (Base & { type: "rift"; issue: IssueKey })
   | (Base & { type: "flare"; issue: IssueKey; map: IssueKey; mapTitle: string })
   | (Base & { type: "adopt"; issue: IssueKey; map: IssueKey; mapTitle: string; from: IssueKey | null })
-  | (Base & { type: "comet"; pr: PrKey; closes: IssueKey[] })
+  | (Base & { type: "comet"; pr: PrKey; closes: IssueKey[]; outside?: string[] })
   | (Base & { type: "close"; issue: IssueKey })
-  | (Base & { type: "supernova"; pr: PrKey; issues: IssueKey[] })
-  /** A pull request that left without closing anything. `merged` PRs are still shown as Supernova. */
-  | (Base & { type: "prgone"; pr: PrKey; merged: boolean });
+  | (Base & { type: "supernova"; pr: PrKey; issues: IssueKey[]; outside?: string[] })
+  /** A pull request that left without closing anything in the Universe. `merged` PRs are still shown as Supernova. */
+  | (Base & { type: "prgone"; pr: PrKey; merged: boolean; outside?: string[] });
 
 export type EventType = UniverseEvent["type"];
 
@@ -62,7 +62,7 @@ export function diff(a: Universe, b: Universe, now: number = b.at || Date.now())
 
   for (const p of Object.values(b.prs)) {
     if (a.prs[p.key]) continue;
-    evs.push({ type: "comet", repo: p.repo, at: p.created || now, url: p.url, pr: p.key, closes: p.closes.slice() });
+    evs.push({ type: "comet", repo: p.repo, at: p.created || now, url: p.url, pr: p.key, closes: p.closes.slice(), ...outsideOf(p.outsideCloses) });
   }
 
   const gone: UniverseEvent[] = [];
@@ -72,13 +72,19 @@ export function diff(a: Universe, b: Universe, now: number = b.at || Date.now())
     const c = b.closedPrs[p.key];
     const at = c?.at || now;
     const closes = c?.closes.length ? c.closes : p.closes;
+    const outside = outsideOf(c?.outsideCloses ?? p.outsideCloses);
     if (c?.merged && closes.length) {
       for (const k of closes) merged.add(k);
-      gone.push({ type: "supernova", repo: p.repo, at, url: p.url, pr: p.key, issues: closes.slice() });
-    } else gone.push({ type: "prgone", repo: p.repo, at, url: p.url, pr: p.key, merged: !!c?.merged });
+      gone.push({ type: "supernova", repo: p.repo, at, url: p.url, pr: p.key, issues: closes.slice(), ...outside });
+    } else gone.push({ type: "prgone", repo: p.repo, at, url: p.url, pr: p.key, merged: !!c?.merged, ...outside });
   }
   // An issue closed by a merged PR plays inside that Supernova, not as its own Close.
   for (const [k, o] of closing) if (!merged.has(k)) evs.push({ type: "close", repo: o.repo, at: now, url: o.url, issue: k });
   evs.push(...gone);
   return evs;
+}
+
+/** Closing refs outside the Universe, as an optional event field: absent when there are none. */
+function outsideOf(refs: string[] | undefined): { outside?: string[] } {
+  return refs?.length ? { outside: refs.slice() } : {};
 }

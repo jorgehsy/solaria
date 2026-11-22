@@ -108,12 +108,12 @@ Log row = tag + sentence, then ` · ${repo} · ${ago}`. `${refs}` is a comma lis
 | `log.adopt.tag` | Adopt | Existing issue added to a Map. Artifact L849 |
 | `log.adopt.text` | #${n} added to «${map}» | |
 | `log.comet.tag` | Comet | PR opened. Artifact L863, L1062 |
-| `log.comet.textRefs` | PR #${pr} opened, closes ${refs} | PR with closing refs |
+| `log.comet.textRefs` | PR #${pr} opened, closes ${refs} | PR with closing refs. Refs to repos outside the config are listed too, as plain text, after the ones inside |
 | `log.comet.text` | PR #${pr} opened | PR with no closing refs |
 | `log.close.tag` | Close | Issue closed. Artifact L871, L1060 |
 | `log.close.text` | #${n} closed | No demo button exists for this event |
 | `log.supernova.tag` | Supernova | PR merged. Artifact L908, L1064, L1075 |
-| `log.supernova.textRefs` | PR #${pr} merged, closes ${refs} | |
+| `log.supernova.textRefs` | PR #${pr} merged, closes ${refs} | Same refs rule as `log.comet.textRefs`. Also used for a merged `prgone` whose only refs are outside the config |
 | `log.supernova.text` | PR #${pr} merged | Code quirk: merged PRs with no closing refs are emitted as `prgone` (Artifact L910); show the Supernova tag and this text anyway |
 | `log.fade.tag` | Fade | PR closed without merging (`prgone`). Artifact L911 |
 | `log.fade.text` | PR #${pr} closed without merging | |

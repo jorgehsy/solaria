@@ -46,18 +46,19 @@ export function eventText(ev: UniverseEvent): { tag: string; text: string } {
       return { tag: L.adopt.tag, text: L.adopt.text(numberOf(ev.issue), ev.mapTitle) };
     case "comet": {
       const pr = numberOf(ev.pr);
-      const refs = ev.closes.map((k) => refText(k, ev.repo)).join(", ");
+      const refs = [...ev.closes, ...(ev.outside ?? [])].map((k) => refText(k, ev.repo)).join(", ");
       return { tag: L.comet.tag, text: refs ? L.comet.textRefs(pr, refs) : L.comet.text(pr) };
     }
     case "close":
       return { tag: L.close.tag, text: L.close.text(numberOf(ev.issue)) };
     case "supernova":
-      return { tag: L.supernova.tag, text: L.supernova.textRefs(numberOf(ev.pr), ev.issues.map((k) => refText(k, ev.repo)).join(", ")) };
-    case "prgone":
-      // A merged PR with no closing refs is still a Supernova to the user.
-      return ev.merged
-        ? { tag: L.supernova.tag, text: L.supernova.text(numberOf(ev.pr)) }
-        : { tag: L.fade.tag, text: L.fade.text(numberOf(ev.pr)) };
+      return { tag: L.supernova.tag, text: L.supernova.textRefs(numberOf(ev.pr), [...ev.issues, ...(ev.outside ?? [])].map((k) => refText(k, ev.repo)).join(", ")) };
+    case "prgone": {
+      // A merged PR with no closing refs in the Universe is still a Supernova to the user.
+      if (!ev.merged) return { tag: L.fade.tag, text: L.fade.text(numberOf(ev.pr)) };
+      const refs = (ev.outside ?? []).map((k) => refText(k, ev.repo)).join(", ");
+      return { tag: L.supernova.tag, text: refs ? L.supernova.textRefs(numberOf(ev.pr), refs) : L.supernova.text(numberOf(ev.pr)) };
+    }
   }
 }
 
