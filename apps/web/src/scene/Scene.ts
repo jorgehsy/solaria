@@ -1701,10 +1701,19 @@ export class Scene implements SceneApi {
   private bindInput() {
     const root = this.o.root;
     const blocked = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome], .lab, .hit, button, a");
+    const inChrome = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome]");
+    // Pinch on a trackpad arrives as ctrl+wheel. d3-zoom skips preventDefault when its filter says no
+    // or the zoom is already at a limit, and then the browser zooms the whole page and blurs the text.
+    const noPageZoom = (e: WheelEvent) => { if (e.ctrlKey) e.preventDefault(); };
+    // Safari sends its own gesture events for a trackpad pinch.
+    const noGesture = (e: Event) => e.preventDefault();
+    window.addEventListener("wheel", noPageZoom, { passive: false });
+    for (const t of ["gesturestart", "gesturechange", "gestureend"]) document.addEventListener(t, noGesture, { passive: false });
     const zoom = d3zoom<HTMLElement, unknown>()
       .scaleExtent([0.06, this.kMax])
       .clickDistance(5)
-      .filter((ev: MouseEvent & WheelEvent) => !blocked(ev.target) && (!ev.ctrlKey || ev.type === "wheel") && !ev.button)
+      // Wheel over labels still zooms the canvas; only the UI panels keep it (they scroll).
+      .filter((ev: MouseEvent & WheelEvent) => (ev.type === "wheel" ? !inChrome(ev.target) : !blocked(ev.target)) && (!ev.ctrlKey || ev.type === "wheel") && !ev.button)
       .on("zoom", (ev: { sourceEvent: unknown; transform: { x: number; y: number; k: number } }) => {
         if (!ev.sourceEvent) return;
         this.stopFlight();
@@ -1743,6 +1752,8 @@ export class Scene implements SceneApi {
       root.removeEventListener("pointerleave", onLeave);
       root.removeEventListener("pointerdown", onDown, true);
       root.removeEventListener("pointerup", onUp);
+      window.removeEventListener("wheel", noPageZoom);
+      for (const t of ["gesturestart", "gesturechange", "gestureend"]) document.removeEventListener(t, noGesture);
       this.zsel?.on(".zoom", null);
     });
   }

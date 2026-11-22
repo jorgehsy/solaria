@@ -16,3 +16,7 @@ All notable changes to Solaria. The format follows [Keep a Changelog](https://ke
   - Error and empty states drawn in space: universe-wide cards, ghost Galaxies, dimmed stale data (#24).
   - Focus + Horizon layout for many repos (#25).
   - Finish: copy-deck test, hourly points budget for the poller, smoke test against the real GitHub API in CI, license and repo docs (#26).
+
+### Fixed
+
+- Pinch and ctrl+wheel zoom no longer fall through to the browser's page zoom (which blurred the text) over labels, UI panels, at the zoom limits, or on Safari trackpads.
