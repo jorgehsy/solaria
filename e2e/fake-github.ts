@@ -3,6 +3,8 @@
  * GITHUB_API_URL pointing here. Tests change the open issues with POST /__issues.
  * `acme/maps` is a repo for the reading rules (slice 4): a Map, closed children, blockers, PRs, assignees.
  * Tests replace a repo's issues and PRs with POST /__repo, and put the seed back with `{ repo, reset: true }`.
+ * Several owners (slice 5): `acme/fleet`, `globex/core` and `umbrella/lab` each accept one token only
+ * (`tokens` below) and answer 401 to any other; GET /__seen lists the tokens each repo was sent.
  */
 import { createServer, type IncomingMessage } from "node:http";
 
@@ -27,7 +29,21 @@ const repos = new Map<string, Issue[]>([
     { number: 7, title: "Send invites" },
     { number: 8, title: "Map: Not a Planet" },
   ]],
+  ["acme/fleet", [
+    { number: 1, title: "Map: Release", kids: [
+      { number: 2, title: "Cut the branch" }, { repo: "globex/core", number: 3, title: "Ship the SDK" }, { repo: "other/lib", number: 4, title: "Upstream fix" },
+    ] },
+    { number: 2, title: "Cut the branch", body: "Blocked by: other/lib#9" },
+  ]],
+  ["globex/core", [
+    { number: 3, title: "Ship the SDK" },
+    { number: 5, title: "Rename the package" },
+  ]],
+  ["umbrella/lab", [{ number: 1, title: "Never read" }]],
 ]);
+/** Repos that accept one token only, as in `e2e/fixtures/owners/.env`. */
+const tokens = new Map([["acme/fleet", "main-token"], ["globex/core", "globex-token"], ["umbrella/lab", "umbrella-token"]]);
+const seen = new Map<string, Set<string>>();
 /** Open pull requests per repo, and the closed ones (newest first). */
 const prs = new Map<string, Pr[]>([
   ["acme/maps", [{ number: 20, title: "Draft the post", draft: true, closes: [{ number: 2 }] }, { number: 21, title: "Invite list", closes: [{ number: 7 }] }]],
@@ -77,10 +93,15 @@ createServer(async (req, res) => {
     return json(200, { ok: true });
   }
   if (req.method === "GET" && req.url === "/__health") return json(200, { ok: true });
+  if (req.method === "GET" && req.url === "/__seen") return json(200, Object.fromEntries([...seen].map(([r, t]) => [r, [...t]])));
   if (req.method !== "POST" || req.url !== "/graphql") return json(404, { message: "Not Found" });
   if (!req.headers.authorization) return json(401, { message: "Bad credentials" });
   const { variables } = JSON.parse(body) as { variables: { owner: string; name: string; withPrs?: boolean } };
   const full = `${variables.owner}/${variables.name}`;
+  const token = req.headers.authorization.replace(/^(bearer|token) /i, "");
+  seen.set(full, (seen.get(full) ?? new Set()).add(token));
+  const want = tokens.get(full);
+  if (want && token !== want) return json(401, { message: "Bad credentials" });
   const issues = repos.get(full);
   if (!issues) return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   return json(200, {

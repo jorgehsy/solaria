@@ -34,6 +34,13 @@ export interface Issue {
   closed: boolean;
   created: number;
   closedAt: number;
+  /**
+   * An External Planet: a sub-issue whose repo is not in the Universe. It orbits its Map's Sun,
+   * tagged "external", and never gets PR signals, blockers or Satellites. Absent means false.
+   */
+  external?: boolean;
+  /** Blockers in repos outside the Universe, as `owner/repo#N`: plain text in the detail card, never state. */
+  outsideBlockers?: string[];
 }
 
 export interface PullRequest {
@@ -83,7 +90,7 @@ export function cloneUniverse(u: Universe): Universe {
     at: u.at,
     repos: u.repos.slice(),
     maps: each(u.maps, (m) => ({ ...m, assignees: m.assignees.slice() })),
-    issues: each(u.issues, (i) => ({ ...i, blockers: i.blockers.slice(), assignees: i.assignees.slice() })),
+    issues: each(u.issues, (i) => ({ ...i, blockers: i.blockers.slice(), assignees: i.assignees.slice(), ...(i.outsideBlockers ? { outsideBlockers: i.outsideBlockers.slice() } : {}) })),
     prs: each(u.prs, (p) => ({ ...p, closes: p.closes.slice() })),
     closedPrs: each(u.closedPrs, (p) => ({ ...p, closes: p.closes.slice() })),
   };

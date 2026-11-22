@@ -46,6 +46,10 @@ export const Issue = z.strictObject({
   key: Key, repo: RepoName, number: z.number().int(), title: z.string(), url: z.string(),
   map: Key.nullable(), blockers: z.array(Key), assignees: z.array(z.string()),
   closed: z.boolean(), created: z.number(), closedAt: z.number(),
+  /** External Planet: a sub-issue in a repo outside the config (spec section 5). Absent means false. */
+  external: z.boolean().optional(),
+  /** Blockers in repos outside the config, `owner/repo#N`, shown as plain text in the detail card. */
+  outsideBlockers: z.array(z.string()).optional(),
 });
 export const PullRequest = z.strictObject({
   key: Key, repo: RepoName, number: z.number().int(), title: z.string(), url: z.string(),
