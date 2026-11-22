@@ -12,6 +12,8 @@ const HOUR = 60 * 60_000;
 export interface PollerOptions {
   tokens: TokenChoice[];
   fetchRepo: (repo: string, token: string) => Promise<FetchResult>;
+  /** Did-you-mean for a `not_found` repo (`owner/name` or null). Asked once per repo. */
+  suggest?: (repo: string, token: string) => Promise<string | null>;
   now?: () => number;
   log?: (line: string) => void;
   /** Interval while at least one browser is connected (60 s; tests may shorten it). */
@@ -28,6 +30,9 @@ interface RepoState {
   token: string | null;
   reply: RepoReply | null;
   status: RepoStatus;
+  okAt?: number;
+  /** undefined: not asked yet; null: asked, no close match. */
+  suggestion?: string | null;
 }
 
 /**
@@ -50,11 +55,12 @@ export class Poller {
   private rate: RateInfo | null = null;
   private points = 0;
   private hourStart: number;
-  private readonly o: Required<Omit<PollerOptions, "tokens" | "fetchRepo">> & Pick<PollerOptions, "fetchRepo">;
+  private readonly o: Required<Omit<PollerOptions, "tokens" | "fetchRepo" | "suggest">> & Pick<PollerOptions, "fetchRepo" | "suggest">;
 
   constructor(opts: PollerOptions) {
     this.o = {
       fetchRepo: opts.fetchRepo,
+      suggest: opts.suggest,
       now: opts.now ?? Date.now,
       log: opts.log ?? ((l) => console.log(l)),
       fastMs: opts.fastMs ?? FAST_MS,
@@ -125,7 +131,8 @@ export class Poller {
     if (this.pausedUntil > now) return this.pausedUntil - now;
     let ms = this.watchers > 0 ? this.o.fastMs : this.o.slowMs;
     if (this.rate && this.rate.limit > 0 && this.rate.remaining < this.rate.limit * 0.2) ms = Math.max(ms, this.o.slowMs);
-    if (this.failures > 0) ms = Math.max(ms, Math.min(BACKOFF_MAX_MS, 60_000 * 2 ** (this.failures - 1)));
+    // Back-off doubles from the fast interval (60 s in real use; the end-to-end tests shorten it).
+    if (this.failures > 0) ms = Math.max(ms, Math.min(BACKOFF_MAX_MS, this.o.fastMs * 2 ** (this.failures - 1)));
     return ms;
   }
 
@@ -151,11 +158,14 @@ export class Poller {
       }
       if (res.ok) {
         r.reply = res.reply;
-        r.status = { repo: r.repo, ok: true, stale: false };
+        r.okAt = this.o.now();
+        r.status = { repo: r.repo, ok: true, stale: false, okAt: r.okAt };
         continue;
       }
       anyFail = true;
-      r.status = { repo: r.repo, ok: false, stale: !!r.reply, code: res.code };
+      if (res.code === "not_found" && r.suggestion === undefined && this.o.suggest) r.suggestion = await this.o.suggest(r.repo, r.token);
+      const hint = res.code === "not_found" && r.suggestion ? r.suggestion : undefined;
+      r.status = { repo: r.repo, ok: false, stale: !!r.reply, code: res.code, ...(hint ? { hint } : {}), ...(r.okAt ? { okAt: r.okAt } : {}) };
       if (res.code === "rate_limited") {
         // One person's tokens share one budget: stop the whole round until it resets.
         this.pausedUntil = this.o.now() + (res.retryAfterMs ?? 60_000);
@@ -218,7 +228,11 @@ export function universeStatus(repos: RepoStatus[], loading: boolean, resumeAt: 
   return resumeAt ? { state: "ok", resumeAt } : { state: "ok" };
 }
 
-/** Whether two snapshots differ, ignoring when they were checked. */
+/**
+ * Whether two snapshots differ, ignoring when they were checked. A healthy repo's okAt moves on every
+ * poll; it only matters once the repo fails, and that failure changes the key anyway.
+ */
 function keyOf(s: LiveSnapshot): string {
-  return JSON.stringify({ status: s.status, repos: s.repos, universe: { ...s.universe, at: 0 } });
+  const repos = s.repos.map((r) => (r.ok ? { ...r, okAt: 0 } : r));
+  return JSON.stringify({ status: s.status, repos, universe: { ...s.universe, at: 0 } });
 }

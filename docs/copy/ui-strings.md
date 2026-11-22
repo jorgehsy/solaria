@@ -172,6 +172,7 @@ Neutral voice, no "I". Prototype `error-states` wording kept verbatim except as 
 | `repo.noAccess.snippet` | GITHUB_TOKEN_${ORG}=github_pat_xxxxxxxx | Prototype: `GITHUB_TOKEN_ACME_CORP=...` |
 | `repo.network.hint` | Can't reach api.github.com. Showing the last good data. Check your connection; Solaria retries on its own. | |
 | `repo.notFound.hint` | GitHub has no repo ${repo}. Check the spelling in solaria.config.json (did you mean ${suggestion}?). | Prototype: `acme/dcos`, `acme/docs` |
+| `repo.notFound.hintPlain` | GitHub has no repo ${repo}. Check the spelling in solaria.config.json. | No close match for a did-you-mean |
 | `repo.notFound.snippet` | "repos": ["${suggestion}"] | |
 | `repo.rateLimited.hint` | Showing the last good data until the limit resets. | Per-repo rate-limit hint |
 | `repo.noMaps.hint` | These issues belong to no Map yet. Open an issue titled "Map: …" and add sub-issues to it. See docs/repo-requirements.md. | NOMAPS_HINT |

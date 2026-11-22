@@ -3,6 +3,7 @@
  * GITHUB_API_URL pointing here. Tests change the open issues with POST /__issues.
  * `acme/maps` is a repo for the reading rules (slice 4): a Map, closed children, blockers, PRs, assignees.
  * Tests replace a repo's issues and PRs with POST /__repo, and put the seed back with `{ repo, reset: true }`.
+ * Make a repo fail with POST /__mode { repo, mode } (401, 403, 404, rate limit or a dropped connection).
  */
 import { createServer, type IncomingMessage } from "node:http";
 
@@ -27,6 +28,8 @@ const repos = new Map<string, Issue[]>([
     { number: 7, title: "Send invites" },
     { number: 8, title: "Map: Not a Planet" },
   ]],
+  // errors.spec.ts: errs/docs is the did-you-mean for errs/dcos, so it must exist before the first poll.
+  ["errs/docs", [{ number: 1, title: "Write the guide" }]],
 ]);
 /** Open pull requests per repo, and the closed ones (newest first). */
 const prs = new Map<string, Pr[]>([
@@ -42,6 +45,9 @@ const T = "2026-11-20T10:00:00Z";
 const url = (repo: string, kind: string, n: number) => `https://github.com/${repo}/${kind}/${n}`;
 const ref = (here: string) => (r: Ref) => ({ number: r.number, repository: { nameWithOwner: r.repo ?? here } });
 const refs = (here: string, rs: Ref[] = []) => ({ nodes: rs.map(ref(here)) });
+
+type Mode = "ok" | "401" | "403" | "404" | "rate" | "network";
+const modes = new Map<string, Mode>();
 
 const port = Number(process.env.FAKE_GITHUB_PORT ?? 4790);
 
@@ -64,6 +70,11 @@ createServer(async (req, res) => {
     repos.set(repo, issues);
     return json(200, { ok: true });
   }
+  if (req.method === "POST" && req.url === "/__mode") {
+    const { repo, mode } = JSON.parse(body) as { repo: string; mode: Mode };
+    modes.set(repo, mode);
+    return json(200, { ok: true });
+  }
   if (req.method === "POST" && req.url === "/__repo") {
     const r = JSON.parse(body) as { repo: string; reset?: boolean; issues?: Issue[]; prs?: Pr[]; closedPrs?: Pr[] };
     const pick = <T>(list: [string, T][], v: T | undefined, map: Map<string, T>) => {
@@ -79,8 +90,22 @@ createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/__health") return json(200, { ok: true });
   if (req.method !== "POST" || req.url !== "/graphql") return json(404, { message: "Not Found" });
   if (!req.headers.authorization) return json(401, { message: "Bad credentials" });
-  const { variables } = JSON.parse(body) as { variables: { owner: string; name: string; withPrs?: boolean } };
+  const { variables } = JSON.parse(body) as { variables: { owner: string; name?: string; withPrs?: boolean } };
+  // The did-you-mean lookup after a not_found: the owner's repo names.
+  if (variables.name === undefined) {
+    const names = [...repos.keys()].filter((r) => r.startsWith(`${variables.owner}/`)).map((r) => ({ name: r.split("/")[1] }));
+    return json(200, { data: { repositoryOwner: names.length ? { repositories: { nodes: names } } : null } });
+  }
   const full = `${variables.owner}/${variables.name}`;
+  const mode = modes.get(full) ?? "ok";
+  if (mode === "network") { req.socket.destroy(); return; }
+  if (mode === "401") return json(401, { message: "Bad credentials" });
+  if (mode === "403") return json(403, { message: "Resource not accessible by personal access token" });
+  if (mode === "rate") {
+    res.writeHead(429, { "content-type": "application/json", "retry-after": "3" });
+    return res.end(JSON.stringify({ message: "API rate limit exceeded" }));
+  }
+  if (mode === "404") return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   const issues = repos.get(full);
   if (!issues) return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   return json(200, {
