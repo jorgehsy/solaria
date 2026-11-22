@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { ServerSnapshot } from "@solaria/contract";
 import type { DemoEventKind } from "@solaria/universe";
 import { Controller } from "./live/controller.ts";
+import { followLive } from "./live/sse.ts";
 import type { ControllerState, Targets } from "./live/controller.ts";
 import { Scene } from "./scene/Scene.ts";
 import type { Searchable, TipInfo } from "./scene/Scene.ts";
@@ -55,6 +56,7 @@ export function App() {
     const root = rootRef.current, host = glRef.current, labels = labelsRef.current;
     if (!root || !host || !labels) return;
     let alive = true;
+    let unfollow: (() => void) | null = null;
     const scene = new Scene({
       host, labels, root,
       chrome: () => [...root.querySelectorAll("[data-chrome]")],
@@ -82,11 +84,15 @@ export function App() {
       }
       if (!alive || controller.getState().mode !== "loading") return;
       if (snap.mode === "demo") controller.startDemo();
-      else controller.live(snap);
+      else {
+        controller.live(snap);
+        unfollow = followLive(controller);
+      }
     })();
     const prune = setInterval(() => controller.pruneLog(), 20_000);
     return () => {
       alive = false;
+      unfollow?.();
       clearInterval(prune);
       controller.attachScene(null);
       controller.stop();
@@ -201,7 +207,7 @@ export function App() {
       <div className="gl" ref={glRef} aria-hidden="true" />
       <div className="labels" ref={labelsRef} />
       {state.mode === "demo" && <div className="veil" aria-hidden="true" />}
-      <Header mode={state.mode} checkedAt={state.checkedAt} error={state.status.state === "error"} />
+      <Header mode={state.mode} checkedAt={state.checkedAt} error={state.status.state === "error"} stale={state.repos.filter((r) => r.stale).map((r) => r.repo)} />
       <div className="tools" data-chrome>
         <button ref={searchBtn} className="tool" type="button" aria-label={S.tool.search} title={S.tool.search} aria-expanded={searchOpen} aria-controls="search" onClick={() => setSearchOpen((o) => !o)}><IconSearch /></button>
         <button className="tool" type="button" aria-pressed={tourOn} aria-label={tourLabel} title={tourLabel} onClick={() => setTour(!tourOn)}><IconTour /></button>

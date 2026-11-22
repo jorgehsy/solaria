@@ -85,3 +85,11 @@ export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
 /** What `GET /api/snapshot` returns and what the SSE stream pushes as a snapshot. */
 export const ServerSnapshot = z.discriminatedUnion("mode", [DemoSnapshot, LiveSnapshot]);
 export type ServerSnapshot = z.infer<typeof ServerSnapshot>;
+
+/** SSE: nothing changed on the last poll; the data is fresh as of `checkedAt`. */
+export const FreshNote = z.strictObject({ checkedAt: z.number() });
+export type FreshNote = z.infer<typeof FreshNote>;
+
+/** SSE event names on `GET /api/events`. */
+export const SSE_SNAPSHOT = "snapshot";
+export const SSE_FRESH = "fresh";
