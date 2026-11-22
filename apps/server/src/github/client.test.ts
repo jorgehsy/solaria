@@ -31,9 +31,23 @@ describe("fetchRepo", () => {
     const f = fake({ status: 200, body: page([1, 2], "c1") }, { status: 200, body: page([3], null) });
     const r = await fetchRepo("acme/web", "tok", { apiUrl: "http://fake/", fetch: f });
     expect(r.ok && r.reply.issues.map((i) => i.number)).toEqual([1, 2, 3]);
-    expect(f.calls[0]).toMatchObject({ url: "http://fake/graphql", auth: "bearer tok", body: { variables: { owner: "acme", name: "web", after: null } } });
-    expect(f.calls[1]?.body).toMatchObject({ variables: { after: "c1" } });
+    expect(f.calls[0]).toMatchObject({ url: "http://fake/graphql", auth: "bearer tok", body: { variables: { owner: "acme", name: "web", after: null, withPrs: true } } });
+    expect(f.calls[1]?.body).toMatchObject({ variables: { after: "c1", withPrs: false } });
     expect(r.rate).toMatchObject({ remaining: 4990, limit: 5000, cost: 1 });
+  });
+
+  it("keeps the pull requests of the first page only", async () => {
+    const pr = (n: number) => ({ number: n, title: `!${n}`, url: `p${n}`, isDraft: false, createdAt: "2026-11-20T10:00:00Z", closingIssuesReferences: { nodes: [] } });
+    const withPrs = (body: ReturnType<typeof page>, open: number[], closed: number[]) => {
+      const r = body.data.repository as Record<string, unknown>;
+      r.pullRequests = { nodes: open.map(pr) };
+      r.closedPullRequests = { nodes: closed.map((n) => ({ ...pr(n), merged: true, mergedAt: null, closedAt: null })) };
+      return body;
+    };
+    const f = fake({ status: 200, body: withPrs(page([1], "c1"), [5], [4]) }, { status: 200, body: page([2], null) });
+    const r = await fetchRepo("acme/web", "tok", { fetch: f });
+    expect(r.ok && r.reply.prs?.map((p) => p.number)).toEqual([5]);
+    expect(r.ok && r.reply.closedPrs?.map((p) => p.number)).toEqual([4]);
   });
 
   it("maps 401 to bad_token", async () => {

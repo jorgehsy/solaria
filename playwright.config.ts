@@ -3,6 +3,7 @@ import path from "node:path";
 
 const PORT = 4748;
 const LIVE_PORT = 4749;
+const READING_PORT = 4750;
 const ERRORS_PORT = 4751;
 export const FAKE_GITHUB = "http://127.0.0.1:4790";
 
@@ -24,6 +25,8 @@ export default defineConfig({
     { name: "demo", testMatch: /demo\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
     // Live spec files share one fake GitHub, so they run one at a time.
     { name: "live", testMatch: /live\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${LIVE_PORT}` } },
+    // Reading specs share the fake repo acme/maps (one changes it), so they run one at a time.
+    { name: "reading", testMatch: /reading\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${READING_PORT}` } },
     { name: "errors", testMatch: /errors\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${ERRORS_PORT}` } },
   ],
   // Started in order: the first builds the web app that both Solaria servers serve.
@@ -42,6 +45,12 @@ export default defineConfig({
     {
       command: `PORT=${LIVE_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/live")} pnpm --filter @solaria/server start`,
       url: `http://127.0.0.1:${LIVE_PORT}/api/snapshot`,
+      reuseExistingServer: !process.env.CI,
+    },
+    // Reading rules (slice 4): its own server and repo, so it never races the live spec's edits.
+    {
+      command: `PORT=${READING_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/reading")} pnpm --filter @solaria/server start`,
+      url: `http://127.0.0.1:${READING_PORT}/api/snapshot`,
       reuseExistingServer: !process.env.CI,
     },
     {
