@@ -45,7 +45,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `PORT=${ERRORS_PORT} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/errors")} pnpm --filter @solaria/server start`,
+      command: `PORT=${ERRORS_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/errors")} pnpm --filter @solaria/server start`,
       url: `http://127.0.0.1:${ERRORS_PORT}/api/snapshot`,
       reuseExistingServer: !process.env.CI,
     },
