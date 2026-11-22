@@ -9,7 +9,7 @@ What your repos and issues must follow for Solaria to show them as expected: [do
 Needs Node 22.12 or newer.
 
 ```sh
-corepack enable && pnpm install
+npm install -g corepack@latest && corepack enable && pnpm install   # older bundled corepack has stale signing keys
 cp .env.example .env                                  # then put your token in GITHUB_TOKEN
 cp solaria.config.example.json solaria.config.json    # then list your repos as owner/repo
 pnpm start
