@@ -571,7 +571,7 @@ export class Scene implements SceneApi {
           bySun.set(sun, list);
         } else {
           n.role = "foreign";
-          input.foreign.push({ key: n.key, repo: n.data.repo, number: n.data.number });
+          input.foreign.push({ key: n.key, repo: n.data.repo, number: n.data.number, sun: sun.key, done: n.data.state === "done" });
         }
       } else {
         n.sun = null;
