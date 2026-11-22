@@ -18,7 +18,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.test.ts", "e2e/**"],
+    files: ["**/*.test.ts", "e2e/**", "playwright.config.ts"],
     rules: { "@typescript-eslint/no-non-null-assertion": "off" },
   },
   {

@@ -1,9 +1,31 @@
+import { useEffect, useState } from "react";
 import type { Mode } from "../live/controller.ts";
 import { S } from "./strings.ts";
 import { statusAgo } from "./format.ts";
 
+/** No new data for this long reads as old (spec section 6). */
+const OLD_MS = 3 * 60_000;
+
+interface Props {
+  mode: Mode;
+  checkedAt: number;
+  error: boolean;
+  /** Repos showing their last good data. */
+  stale: string[];
+}
+
 /** Wordmark (orbit badge), the Universe title and the status line. */
-export function Header({ mode, checkedAt, error }: { mode: Mode; checkedAt: number; error: boolean }) {
+export function Header({ mode, checkedAt, error, stale }: Props) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(t);
+  }, []);
+  const loading = mode === "loading" || (mode === "live" && !checkedAt && !error);
+  const live = mode === "live" && checkedAt > 0;
+  const ago = statusAgo(checkedAt, Math.max(now, checkedAt));
+  const old = live && now - checkedAt > OLD_MS;
+  const why = stale.length ? S.statusTip.stale(stale.join(", "), ago) : old ? S.statusTip.old(ago) : S.statusTip.ok;
   return (
     <header className="brand" data-chrome>
       <div className="wordmark">
@@ -18,10 +40,10 @@ export function Header({ mode, checkedAt, error }: { mode: Mode; checkedAt: numb
             <span className="fresh" title={S.statusTip.demo} aria-label={S.statusTip.demo}><i className="dot" aria-hidden="true" />{S.status.demoText}</span>
           </>
         )}
-        {(mode === "loading" || (mode === "live" && !checkedAt && !error)) && <span className="fresh"><i className="dot" aria-hidden="true" />{S.status.loading}</span>}
-        {mode === "live" && checkedAt > 0 && (
-          <span className="fresh ok" title={S.statusTip.ok} aria-label={S.status.updatedAria(statusAgo(checkedAt), S.statusTip.ok)}>
-            <i className="dot" aria-hidden="true" />{S.status.updated(statusAgo(checkedAt))}
+        {loading && <span className="fresh"><i className="dot" aria-hidden="true" />{S.status.loading}</span>}
+        {live && (
+          <span className={`fresh ${stale.length || old ? "stale" : "ok"}`} title={why} aria-label={S.status.updatedAria(ago, why)}>
+            <i className="dot" aria-hidden="true" />{S.status.updated(ago)}
           </span>
         )}
       </p>

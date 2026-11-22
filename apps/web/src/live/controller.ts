@@ -111,11 +111,18 @@ export class Controller {
 
   /** A live snapshot from the server: its health, then its Universe. */
   live(snap: LiveSnapshot): void {
+    // The first snapshot with data draws quietly, like a first load: no storm of Rifts.
+    if (this.state.checkedAt === 0 && snap.checkedAt > 0) this.first = true;
     this.set({ mode: "live", status: snap.status, repos: snap.repos });
     // A rejected token draws no Galaxies: only the card in empty space.
     const rejected = snap.status.state === "error" && snap.status.code === "bad_token";
     this.ingest(rejected ? { ...snap.universe, repos: [] } : snap.universe);
     this.set({ checkedAt: snap.checkedAt });
+  }
+
+  /** Nothing changed on the server's last poll. */
+  fresh(checkedAt: number): void {
+    this.set({ checkedAt });
   }
 
   /** A new snapshot. The first one draws quietly; later ones are diffed and played as events. */
