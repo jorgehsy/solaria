@@ -24,5 +24,21 @@ _Avoid_: orphan (in user-facing text).
 
 **Comet**: A newly opened pull request, travelling to the issue it closes.
 
+**Event**: One change between two snapshots, shown as a line in the Activity log and as an animation in the universe. Every event has one of the space names below.
+
+**Big Bang**: The event of a new Map appearing.
+
+**Rift**: The event of a new issue that belongs to no Map, so it joins the Gas.
+
+**Flare**: The event of a new issue that is born inside a Map.
+
+**Adopt**: The event of an existing issue being added to a Map.
+
+**Close**: The event of an issue being closed.
+
+**Supernova**: The event of a pull request being merged.
+
+**Fade**: The event of a pull request being closed without merging.
+
 **Repo requirements**: The conventions a repo and its issues must follow for Solaria to show them as expected. Fixed, not configurable.
 _Avoid_: setup, configuration (those mean the user's own config file).
