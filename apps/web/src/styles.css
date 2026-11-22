@@ -68,6 +68,8 @@ a { color: inherit; }
 }
 .lab-gal span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .lab-gal:hover { color: var(--sky); }
+/* Horizon: repo name only, cut with an ellipsis; the full name is the title tooltip. */
+.lab-gal.lab-hz { display: block; max-width: 112px; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.06em; font-size: 10px; padding: 4px 2px; }
 .lab-map {
   display: grid; gap: 2px; width: max-content; max-width: 184px; text-align: center; pointer-events: auto; text-decoration: none;
   padding: 2px 6px; border-radius: 8px;
