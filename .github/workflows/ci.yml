@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
 
 jobs:
   check:
@@ -24,6 +26,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # The one check against the real GitHub GraphQL API (everything else uses the fake GitHub).
+      - run: pnpm --filter @solaria/server smoke
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SMOKE_REPO: ${{ github.repository }}
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
         env:

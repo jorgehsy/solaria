@@ -8,6 +8,8 @@ export const FAST_MS = 60_000;
 export const SLOW_MS = 5 * 60_000;
 const BACKOFF_MAX_MS = 30 * 60_000;
 const HOUR = 60 * 60_000;
+/** GraphQL points Solaria may spend per hour, leaving room for other tools on the same account (spec section 4). */
+export const POINTS_PER_HOUR = 1_500;
 
 export interface PollerOptions {
   tokens: TokenChoice[];
@@ -38,7 +40,8 @@ interface RepoState {
 /**
  * The one shared poller (spec section 4): reads every repo in turn, keeps each repo's last good data
  * when a read fails (marked stale), and tells listeners whether the picture changed.
- * 60 s while a browser is connected, 5 min when none is; slower when the rate budget runs low.
+ * 60 s while a browser is connected, 5 min when none is; slower when the rate budget runs low
+ * or when a round costs more than the hourly points budget allows.
  */
 export class Poller {
   private repos: RepoState[];
@@ -54,6 +57,8 @@ export class Poller {
   private failures = 0;
   private rate: RateInfo | null = null;
   private points = 0;
+  /** Points the last full round cost. */
+  private roundPoints = 0;
   private hourStart: number;
   private readonly o: Required<Omit<PollerOptions, "tokens" | "fetchRepo" | "suggest">> & Pick<PollerOptions, "fetchRepo" | "suggest">;
 
@@ -131,6 +136,9 @@ export class Poller {
     if (this.pausedUntil > now) return this.pausedUntil - now;
     let ms = this.watchers > 0 ? this.o.fastMs : this.o.slowMs;
     if (this.rate && this.rate.limit > 0 && this.rate.remaining < this.rate.limit * 0.2) ms = Math.max(ms, this.o.slowMs);
+    // Many repos: space rounds out so the hour stays within budget (scaled like the back-off when
+    // the end-to-end tests shorten the fast interval).
+    if (this.roundPoints > 0) ms = Math.max(ms, Math.ceil(((this.roundPoints * HOUR) / POINTS_PER_HOUR) * (this.o.fastMs / FAST_MS)));
     // Back-off doubles from the fast interval (60 s in real use; the end-to-end tests shorten it).
     if (this.failures > 0) ms = Math.max(ms, Math.min(BACKOFF_MAX_MS, this.o.fastMs * 2 ** (this.failures - 1)));
     return ms;
@@ -148,6 +156,7 @@ export class Poller {
   private async round(): Promise<void> {
     let limited = false;
     let anyFail = false;
+    let spent = 0;
     for (const r of this.repos) {
       if (!r.token) continue;
       if (this.o.now() < this.pausedUntil) { limited = true; break; }
@@ -155,6 +164,7 @@ export class Poller {
       if (res.rate) {
         this.rate = res.rate;
         this.points += res.rate.cost;
+        spent += res.rate.cost;
       }
       if (res.ok) {
         r.reply = res.reply;
@@ -174,6 +184,7 @@ export class Poller {
         break;
       }
     }
+    if (!limited) this.roundPoints = spent;
     if (this.rate && this.rate.remaining === 0 && this.rate.resetAt > this.o.now()) this.pausedUntil = Math.max(this.pausedUntil, this.rate.resetAt);
     this.failures = limited ? this.failures + 1 : anyFail && this.repos.every((r) => !r.status.ok) ? this.failures + 1 : 0;
     this.checkedAt = this.o.now();

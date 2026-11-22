@@ -2,6 +2,9 @@ import { forwardRef } from "react";
 import type { TipInfo } from "../scene/Scene.ts";
 import { S } from "./strings.ts";
 
+/** Planet state to its copy-deck key. */
+const STATE_KEY = { todo: "todo", doing: "draftPr", blocked: "blocked", review: "inReview", done: "done" } as const;
+
 /** The hover card. The Scene positions it each frame; this only renders its content. */
 export const Tooltip = forwardRef<HTMLDivElement, { tip: TipInfo | null }>(function Tooltip({ tip }, ref) {
   const cls = `tip${tip ? " on" : ""}${tip?.touch ? " touch" : ""}`;
@@ -21,8 +24,8 @@ export const Tooltip = forwardRef<HTMLDivElement, { tip: TipInfo | null }>(funct
             ) : (
               <span className="chip">
                 <span className={`g g-${tip.state === "done" ? "todo" : tip.state}`} aria-hidden="true" />
-                {S.state[tip.state]}
-                {tip.assignees.length ? S.tip.planetAssigned(tip.assignees.join(", ")) : ""}
+                {S.state[STATE_KEY[tip.state]]}
+                {tip.assignees.length ? ` ${S.tip.planetAssigned(tip.assignees.join(", "))}` : ""}
                 {tip.external && <span className="tip-tag">{S.tip.external}</span>}
               </span>
             )}
