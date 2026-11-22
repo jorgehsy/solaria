@@ -1494,7 +1494,9 @@ export class Scene implements SceneApi {
       const x = clamp(p.x - lw / 2, 8, W - lw - 8), y = Math.max(8, p.y - 30);
       G.label.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       const gb = { x0: x, x1: x + lw, y0: y, y1: y + 26 };
-      const under = hits(gb, boxes.slice(0, nChrome));
+      // A Galaxy off screen keeps its label off screen too (no labels pinned to the edge).
+      const away = p.x < 0 || p.x > W || p.y < -G.R * k * 2 || p.y > this.H;
+      const under = away || hits(gb, boxes.slice(0, nChrome));
       G.label.style.opacity = under ? "0" : String(Math.min(1, this.introA * 1.4) * (!hl || hl.gals.has(G) ? 1 : 1 - 0.65 * hlA));
       if (!under) boxes.push(gb);
     }

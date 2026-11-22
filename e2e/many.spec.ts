@@ -64,6 +64,8 @@ test("Focus is recomputed from each snapshot", async ({ page }) => {
     method: "POST",
     body: JSON.stringify({ repo, issues: Array.from({ length: 20 }, (_, i) => ({ number: i + 1, title: `Rush ${i + 1}` })) }),
   });
-  await expect(page.locator(".lab-gal:not(.lab-hz)", { hasText: repo })).toContainText("20 open", { timeout: 15_000 });
+  // New issues arrive one Rift at a time (1.5 s each), so wait for the swap, not the final count.
+  await expect(page.locator(".lab-gal:not(.lab-hz)", { hasText: repo })).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.locator(`.lab-hz[title='${repo}']`)).toHaveCount(0);
   await expect(page.locator(".lab-hz")).toHaveCount(27);
 });
