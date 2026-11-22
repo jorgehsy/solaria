@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Mode } from "../live/controller.ts";
 import { S } from "./strings.ts";
-import { oldAfter, statusAgo } from "./format.ts";
+import { cadenceText, oldAfter, statusAgo } from "./format.ts";
 
 interface Props {
   mode: Mode;
@@ -24,7 +24,7 @@ export function Header({ mode, checkedAt, pollMs, error, stale }: Props) {
   const live = mode === "live" && checkedAt > 0;
   const ago = statusAgo(checkedAt, Math.max(now, checkedAt));
   const old = live && now - checkedAt > oldAfter(pollMs);
-  const why = stale.length ? S.statusTip.stale(stale.join(", "), ago) : old ? S.statusTip.old(ago) : S.statusTip.ok;
+  const why = stale.length ? S.statusTip.stale(stale.join(", "), ago) : old ? S.statusTip.old(ago) : S.statusTip.ok(cadenceText(pollMs || 60_000));
   return (
     <header className="brand" data-chrome>
       <div className="wordmark">

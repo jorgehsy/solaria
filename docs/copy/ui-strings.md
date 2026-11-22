@@ -54,6 +54,9 @@ Voice: space words for events and objects, short and playful, with the GitHub wo
 | `time.minAgo` | ${m} min ago | Artifact L1088 |
 | `time.hourAgo` | ${h} h ago | Artifact L1089 |
 | `time.inMin` | in ${m} min | Rate-limit countdown. Prototype error-states |
+| `time.everyMinute` | minute | Poll cadence at 60 s, fills `statusTip.ok` (#38) |
+| `time.everySec` | ${s} s | Poll cadence under 2 min, fills `statusTip.ok` (#38) |
+| `time.everyMin` | ${m} min | Poll cadence of 2 min or more, rounded, fills `statusTip.ok` (#38) |
 
 ## 3. Tooltips / hover cards
 
@@ -70,7 +73,7 @@ Voice: space words for events and objects, short and playful, with the GitHub wo
 | `log.openOnGithub` | Open on GitHub | Title of the log external link. Artifact L1032 |
 | `log.openOnGithubAria` | Open on GitHub: ${text} | aria-label of the log external link. Artifact L1032 |
 | `statusTip.demo` | Demo data. Add a GitHub token to see your own repos. | Status dot hover in demo mode. Artifact L1093 (second sentence rewritten: claude.ai connector gone) |
-| `statusTip.ok` | All good. Checking GitHub every minute. | Status dot hover, healthy. Artifact L1101; 60 s poll while a browser is open (rate-limit decision) |
+| `statusTip.ok` | All good. Checking GitHub every ${interval}. | Status dot hover, healthy. Artifact L1101; `${interval}` is the real poll cadence (`time.every*`): 60 s normally, longer with many repos or a low rate budget (#38) |
 | `statusTip.stale` | Couldn't read ${repos}. Showing data from ${age}. | Status dot hover, some repos failed. Artifact L1102 |
 | `statusTip.old` | No new data from GitHub for a while. Showing data from ${age}. | Status dot hover, whole feed old: no data for 3 min, or poll interval + 2 min when polling is stretched (#38). Artifact L1103 |
 

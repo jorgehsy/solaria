@@ -82,6 +82,9 @@ export const S = {
     minAgo: (m: number) => `${m} min ago`,
     hourAgo: (h: number) => `${h} h ago`,
     inMin: (m: number) => `in ${m} min`,
+    everyMinute: "minute",
+    everySec: (s: number) => `${s} s`,
+    everyMin: (m: number) => `${m} min`,
   },
   tip: {
     sunChip: (done: number, total: number) => `Map · ${done} of ${total} done`,
@@ -94,7 +97,7 @@ export const S = {
   },
   statusTip: {
     demo: "Demo data. Add a GitHub token to see your own repos.",
-    ok: "All good. Checking GitHub every minute.",
+    ok: (interval: string) => `All good. Checking GitHub every ${interval}.`,
     stale: (repos: string, age: string) => `Couldn't read ${repos}. Showing data from ${age}.`,
     old: (age: string) => `No new data from GitHub for a while. Showing data from ${age}.`,
   },
