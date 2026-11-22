@@ -4,8 +4,11 @@ import { FAKE_GITHUB } from "../playwright.config.ts";
 const setIssues = (issues: { number: number; title: string; assignees?: string[] }[]) =>
   fetch(`${FAKE_GITHUB}/__issues`, { method: "POST", body: JSON.stringify({ repo: "acme/web", issues }) });
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page, request }) => {
+  // With nobody watching, the server polls only every 5 minutes: open the page first so the reset is read now.
+  await page.goto("/");
   await setIssues([{ number: 1, title: "Sort the sidebar" }, { number: 2, title: "Empty-state text", assignees: ["alice"] }]);
+  await expect.poll(async () => Object.keys((await (await request.get("/api/snapshot")).json()).universe.issues)).toEqual(["acme/web#1", "acme/web#2"]);
 });
 
 test("shows the configured repo's real open issues", async ({ page, request }) => {

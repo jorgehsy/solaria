@@ -6,6 +6,7 @@ const LIVE_PORT = 4749;
 const READING_PORT = 4750;
 const ERRORS_PORT = 4751;
 const OWNERS_PORT = 4755;
+const MANY_PORT = 4760;
 export const FAKE_GITHUB = "http://127.0.0.1:4790";
 
 /**
@@ -31,6 +32,8 @@ export default defineConfig({
     { name: "errors", testMatch: /errors\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${ERRORS_PORT}` } },
     // Several owners (slice 5): three owners, one token each, against repos nobody else changes.
     { name: "owners", testMatch: /owners\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${OWNERS_PORT}` } },
+    // The many-repos spec changes `fleet/*` repos in the same fake GitHub: one at a time as well.
+    { name: "many", testMatch: /many\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${MANY_PORT}` } },
   ],
   // Started in order: the first builds the web app that both Solaria servers serve.
   webServer: [
@@ -65,6 +68,12 @@ export default defineConfig({
     {
       command: `env -u GITHUB_TOKEN PORT=${OWNERS_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/owners")} pnpm --filter @solaria/server start`,
       url: `http://127.0.0.1:${OWNERS_PORT}/api/snapshot`,
+      reuseExistingServer: !process.env.CI,
+    },
+    // Many repos (slice 8): 30 `fleet/*` repos for Focus + Horizon.
+    {
+      command: `PORT=${MANY_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/many")} pnpm --filter @solaria/server start`,
+      url: `http://127.0.0.1:${MANY_PORT}/api/snapshot`,
       reuseExistingServer: !process.env.CI,
     },
   ],

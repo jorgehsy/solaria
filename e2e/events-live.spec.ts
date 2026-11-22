@@ -11,7 +11,9 @@ const setIssues = (issues: { number: number; title: string; assignees?: string[]
 
 const BASE = [{ number: 1, title: "Sort the sidebar" }, { number: 2, title: "Empty-state text", assignees: ["alice"] }];
 
-test.beforeEach(async ({ request }) => {
+test.beforeEach(async ({ page, request }) => {
+  // With nobody watching, the server polls only every 5 minutes: open the page first so the reset is read now.
+  await page.goto("/");
   await setIssues(BASE);
   await expect.poll(async () => Object.keys((await (await request.get("/api/snapshot")).json()).universe.issues)).toEqual(["acme/web#1", "acme/web#2"]);
 });

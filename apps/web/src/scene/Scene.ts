@@ -8,8 +8,8 @@ import { select } from "d3-selection";
 import type { Selection } from "d3-selection";
 import { interpolateZoom } from "d3-interpolate";
 import type { ZoomView } from "d3-interpolate";
-import { hash01, layoutUniverse, satelliteLabel } from "@solaria/universe";
-import type { IssueState, IssueView, LayoutInput, MapIssue, PullRequest, UniverseEvent, View } from "@solaria/universe";
+import { FIT_INSETS, hash01, layoutUniverse, satelliteLabel } from "@solaria/universe";
+import type { IssueState, IssueView, Layout, LayoutInput, MapIssue, PullRequest, UniverseEvent, View } from "@solaria/universe";
 import type { SceneApi, Targets } from "../live/controller.ts";
 import { S } from "../ui/strings.ts";
 import type { GalaxyNote } from "../ui/galaxyNotes.ts";
@@ -72,6 +72,8 @@ interface Galaxy {
   repo: string;
   x: number; y: number; vx: number; vy: number; tx: number; ty: number;
   R: number; Rt: number; spin: number; count: number;
+  /** Focus or Horizon, and how much its contents are shrunk (1 in Focus). */
+  tier: "focus" | "horizon"; scale: number;
   halo: Sprite; core: Sprite; rot: Container;
   stars: Star[]; puffs: Puff[];
   gas: { base: Sprite | null; baseA: number; blobs: Map<string, Blob> };
@@ -142,6 +144,10 @@ export class Scene implements SceneApi {
   private autoFit = true;
   private fitDirty = true;
   private galaxies = new Map<string, Galaxy>();
+  /** World box the default fit frames when there is a Horizon. */
+  private frame: Layout["frame"] = null;
+  /** Most zoom allowed: Horizon Galaxies are small, so flying into one needs more. */
+  private kMax = 4;
   private nodes = new Map<string, Node>();
   private suns = new Map<string, Sun>();
   private trails = new Map<string, Trail>();
@@ -246,6 +252,8 @@ export class Scene implements SceneApi {
     app.renderer.on("resize", (w: number, h: number) => {
       this.W = w;
       this.H = h;
+      // Horizon geometry depends on the window size.
+      if (this.vm.repos.length) this.layout();
       this.fitDirty = true;
       if (this.autoFit) {
         const f = this.fitTarget();
@@ -354,10 +362,18 @@ export class Scene implements SceneApi {
     label.rel = "noopener";
     label.href = `https://github.com/${repo}/issues`;
     this.o.labels.appendChild(label);
-    return {
-      repo, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, R: 120, Rt: 120, spin: h * TAU, count: 0,
+    const G: Galaxy = {
+      repo, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, R: 120, Rt: 120, spin: h * TAU, count: 0, tier: "focus", scale: 1,
       halo, core, rot, stars, puffs, gas: { base: null, baseA: 0, blobs: new Map() }, cloud: null, foreign: null, label,
     };
+    // A Horizon Galaxy's label flies the camera to it; it never swaps it into Focus.
+    label.addEventListener("click", (e) => {
+      if (G.tier !== "horizon" || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      if (this.tour) this.tourStop();
+      this.flyTo(this.frameGalaxy(G, 1.1), 900);
+    });
+    return G;
   }
   private destroyGalaxy(G: Galaxy) {
     for (const o of [G.halo, G.rot, G.core]) o.destroy({ children: true });
@@ -571,7 +587,8 @@ export class Scene implements SceneApi {
         planets: (bySun.get(s) ?? []).map((n) => ({ key: n.key, number: n.data.number, blockers: n.data.blockers, done: n.data.state === "done" })),
       });
     }
-    const L = layoutUniverse(input, { reducedMotion: this.still() });
+    const L = layoutUniverse(input, { reducedMotion: this.still(), viewport: { w: this.W || 1440, h: this.H || 900 } });
+    this.frame = L.frame;
     for (const s of this.suns.values()) {
       const p = L.suns.get(s.key);
       if (!p) continue;
@@ -597,13 +614,34 @@ export class Scene implements SceneApi {
       const p = L.galaxies.get(repo);
       if (!G || !p) continue;
       G.tx = p.x; G.ty = p.y; G.Rt = p.R; G.cloud = p.gas; G.foreign = p.foreign;
+      G.tier = p.tier; G.scale = p.scale;
       G.count = input.openCount[repo] ?? 0;
-      const sub = this.notes.get(repo)?.look === "ghost" ? S.galaxy.noData : G.count ? S.galaxy.open(G.count) : S.galaxy.nothingOpen;
-      const html = `${esc(repo)}<span>${esc(sub)}</span>`;
-      if (G.label.innerHTML !== html) G.label.innerHTML = html;
+      this.galaxyLabel(G);
       this.syncGas(G, input.gas.filter((g) => g.repo === repo).map((g) => g.key));
     }
+    const sMin = Math.min(1, ...[...this.galaxies.values()].map((G) => G.scale));
+    this.kMax = Math.max(4, 4 / sMin);
+    this.zoom?.scaleExtent([0.06, this.kMax]);
     this.fitDirty = true;
+  }
+  /** Focus: full `owner/repo` and the open count. Horizon: repo name only (CSS truncates), full name on hover. */
+  private galaxyLabel(G: Galaxy) {
+    const hz = G.tier === "horizon";
+    const name = hz ? G.repo.slice(G.repo.indexOf("/") + 1) : G.repo;
+    const sub = this.notes.get(G.repo)?.look === "ghost" ? S.galaxy.noData : G.count ? S.galaxy.open(G.count) : S.galaxy.nothingOpen;
+    const html = hz ? esc(name) : `${esc(name)}<span>${esc(sub)}</span>`;
+    if (G.label.innerHTML !== html) G.label.innerHTML = html;
+    G.label.classList.toggle("lab-hz", hz);
+    if (hz) G.label.title = G.repo; else G.label.removeAttribute("title");
+  }
+  /**
+   * How much of a Galaxy's inside shows at zoom k: 1 in Focus. A Horizon Galaxy is a distant
+   * smudge at the default fit; its Suns and Planets fade in as the camera flies close.
+   */
+  private vis(G: Galaxy | undefined, k: number): number {
+    if (!G || G.scale >= 1) return 1;
+    const u = clamp((k * G.scale - 0.2) / 0.25, 0, 1);
+    return u * u * (3 - 2 * u);
   }
   private syncGas(G: Galaxy, keys: string[]) {
     const set = new Set(keys);
@@ -645,12 +683,17 @@ export class Scene implements SceneApi {
   private fitTarget(): Cam | null {
     const { W, H } = this;
     if (!W || !H || !this.galaxies.size) return null;
+    const { x: padX, top, bottom } = FIT_INSETS;
+    if (this.frame) {
+      const f = this.frame;
+      const k = Math.min((W - padX * 2) / (f.x1 - f.x0), (H - top - bottom) / (f.y1 - f.y0));
+      return { k, x: W / 2 - ((f.x0 + f.x1) / 2) * k, y: top + (H - top - bottom) / 2 - ((f.y0 + f.y1) / 2) * k };
+    }
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const G of this.galaxies.values()) {
       x0 = Math.min(x0, G.tx - G.Rt); x1 = Math.max(x1, G.tx + G.Rt);
       y0 = Math.min(y0, G.ty - G.Rt - 20); y1 = Math.max(y1, G.ty + G.Rt);
     }
-    const padX = 40, top = 104, bottom = 110;
     const k = clamp(Math.min((W - padX * 2) / (x1 - x0), (H - top - bottom) / (y1 - y0)), 0.08, 1.6);
     return { k, x: W / 2 - ((x0 + x1) / 2) * k, y: top + (H - top - bottom) / 2 - ((y0 + y1) / 2) * k };
   }
@@ -688,17 +731,23 @@ export class Scene implements SceneApi {
   }
   private boxOf(t: Targets) {
     const r = this.resolveHl(t);
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, s = 1;
     const add = (x: number, y: number, rr: number) => { x0 = Math.min(x0, x - rr); y0 = Math.min(y0, y - rr); x1 = Math.max(x1, x + rr); y1 = Math.max(y1, y + rr); };
-    for (const n of r.nodes) add(n.tx, n.ty, 40);
-    for (const s of r.suns) add(s.tx, s.ty, (s.rings.length ? (s.rings[s.rings.length - 1] ?? s.r) : s.r) + 24);
-    for (const G of r.ringGals) add(G.tx, G.ty, G.Rt);
-    if (!isFinite(x0)) for (const G of r.gals) add(G.tx, G.ty, G.Rt);
-    return isFinite(x0) ? { x0, y0, x1, y1 } : null;
+    // Inside a Horizon Galaxy everything is shrunk: pad less and allow a closer camera.
+    const sc = (repo: string) => { const g = this.galaxies.get(repo)?.scale ?? 1; s = Math.min(s, g); return g; };
+    for (const n of r.nodes) add(n.tx, n.ty, 40 * sc(n.data.repo));
+    for (const su of r.suns) add(su.tx, su.ty, (su.rings.length ? (su.rings[su.rings.length - 1] ?? su.r) : su.r) + 24 * sc(su.data.repo));
+    for (const G of r.ringGals) { sc(G.repo); add(G.tx, G.ty, G.Rt); }
+    if (!isFinite(x0)) for (const G of r.gals) { sc(G.repo); add(G.tx, G.ty, G.Rt); }
+    return isFinite(x0) ? { x0, y0, x1, y1, s } : null;
   }
   private frameTargets(t: Targets): Cam | null {
     const b = this.boxOf(t);
-    return b ? this.frameBox(b.x0, b.y0, b.x1, b.y1) : null;
+    return b ? this.frameBox(b.x0, b.y0, b.x1, b.y1, Math.min(this.kMax, 1.4 / b.s)) : null;
+  }
+  private frameGalaxy(G: Galaxy, kMax: number): Cam {
+    const R = G.Rt * 1.05;
+    return this.frameBox(G.tx - R, G.ty - R, G.tx + R, G.ty + R, Math.min(this.kMax, kMax / G.scale));
   }
   /** Fly to what an event or a search hit touched: ~800 ms, a cut with reduced motion. */
   travel(t: Targets, ms = 800): void {
@@ -710,7 +759,7 @@ export class Scene implements SceneApi {
     if (!b) return false;
     const a = this.toScreen(b.x0, b.y0), c = this.toScreen(b.x1, b.y1);
     const inside = a.x >= 0 && a.y >= 60 && c.x <= this.W && c.y <= this.H - 60;
-    return !inside || this.cam.k < 0.45;
+    return !inside || this.cam.k * b.s < 0.45;
   }
   touring(): boolean {
     return !!this.tour;
@@ -738,7 +787,7 @@ export class Scene implements SceneApi {
     const list = [...this.galaxies.values()].sort((a, b) => b.count - a.count);
     me.i = (me.i + 1) % (list.length + 1);
     const G = list[me.i];
-    const t = G ? this.frameBox(G.tx - G.Rt * 1.05, G.ty - G.Rt * 1.05, G.tx + G.Rt * 1.05, G.ty + G.Rt * 1.05, 1.1) : this.fitTarget();
+    const t = G ? this.frameGalaxy(G, 1.1) : this.fitTarget();
     if (!t) return;
     this.flyTo(t, 6000, "sine.inOut", () => {
       if (this.tour !== me) return;
@@ -769,7 +818,7 @@ export class Scene implements SceneApi {
     const { cam, W, H } = this;
     const t = { x: cam.x + dx, y: cam.y + dy, k: cam.k };
     if (kf) {
-      const k2 = clamp(cam.k * kf, 0.06, 4);
+      const k2 = clamp(cam.k * kf, 0.06, this.kMax);
       t.x = W / 2 - ((W / 2 - cam.x) / cam.k) * k2;
       t.y = H / 2 - ((H / 2 - cam.y) / cam.k) * k2;
       t.k = k2;
@@ -1201,15 +1250,15 @@ export class Scene implements SceneApi {
         b.a += ((b.on ? 0.12 : 0) - b.a) * Math.min(1, dt * 0.8);
         const wob = calm ? 1 : 1 + Math.sin(T * 0.4 + b.h * TAU) * 0.08;
         b.sp.position.set(b.x + (calm ? 0 : Math.sin(T * 0.21 + b.h * 9) * 4), b.y + (calm ? 0 : Math.cos(T * 0.17 + b.h * 7) * 4));
-        b.sp.scale.set((92 * wob) / 256);
-        b.sp.alpha = b.a * (isG(G) ? 1 + hlA * 0.6 : dimF) * gfade;
+        b.sp.scale.set((92 * wob * G.scale) / 256);
+        b.sp.alpha = b.a * (isG(G) ? 1 + hlA * 0.6 : dimF) * gfade * this.vis(G, k);
         if (!b.on && b.a < 0.004) { b.sp.destroy(); ga.blobs.delete(key); }
       }
     }
 
-    // Suns
-    const sunSc = sunK(k) / k;
+    // Suns (sized for the zoom their own Galaxy is seen at: Horizon contents are shrunk)
     for (const [key, s] of this.suns) {
+      const sG = this.galaxies.get(s.data.repo), gs = sG?.scale ?? 1, sunSc = sunK(k * gs) / (k * gs), sv = this.vis(sG, k);
       this.targetSun(s);
       if (K && !s.hold) this.spring(s, dt, K); else if (!s.hold) { s.x = s.tx; s.y = s.ty; }
       if (!s.hold) s.ap += (s.apTo - s.ap) * (calm ? 1 : Math.min(1, dt * 3));
@@ -1233,14 +1282,15 @@ export class Scene implements SceneApi {
       s.prog.alpha = Math.min(1, a);
       s.orbit.position.set(s.x, s.y);
       s.orbit.alpha = Math.min(1, a);
+      for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= sv;
       if (hl && !hl.suns.has(s)) for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= dimF;
       const sfade = this.fadeOf(s.data.repo);
       if (sfade < 1) for (const o of [s.glow, s.corona, s.body, s.prog, s.orbit]) o.alpha *= sfade;
     }
 
     // Planets and Gas
-    const sc = nodeK(k) / k;
     for (const [key, n] of this.nodes) {
+      const nG = this.galaxies.get(n.data.repo), sc = nodeK(k * (nG?.scale ?? 1)) / k, nv = this.vis(nG, k);
       this.targetNode(n);
       if (n.travel) {
         const tr = n.travel, u = tr.t;
@@ -1255,7 +1305,7 @@ export class Scene implements SceneApi {
       if (!n.hold) n.ap += (n.apTo - n.ap) * (calm ? 1 : Math.min(1, dt * (n.dying ? 2 : 3)));
       if (n.dying && n.ap < 0.02) { this.destroyNode(n); this.nodes.delete(key); continue; }
       // An External Planet whose Sun is not drawn (yet) has nowhere to be.
-      const a = n.data.external && !n.sun ? 0 : clamp(n.ap, 0, 1.4), al = Math.min(1, a);
+      const a = n.data.external && !n.sun ? 0 : clamp(n.ap, 0, 1.4), al = Math.min(1, a) * nv;
       n.body.position.set(n.x, n.y);
       n.body.scale.set(sc * a);
       n.body.alpha = al;
@@ -1340,7 +1390,8 @@ export class Scene implements SceneApi {
         continue;
       }
       const path = this.trailPath(t);
-      if (!path || t.prog <= 0.001) continue;
+      const tv = this.vis(this.galaxies.get(t.pr.repo), k);
+      if (!path || t.prog <= 0.001 || tv < 0.01) continue;
       const N = 26, end = t.prog;
       const lit = !!hl && hl.trails.has(t);
       const lf = !hl ? 1 : lit ? 1 + hlA * 0.9 : dimF;
@@ -1351,7 +1402,7 @@ export class Scene implements SceneApi {
         const u = (end * i) / N, p = this.qpt(path, u), q = i / N;
         const f = t.head ? q : 0.35 + 0.65 * (1 - Math.abs(q - 0.5) * 1.2);
         dyn.moveTo(prev.x, prev.y).lineTo(p.x, p.y)
-          .stroke({ width: (0.6 + 2.2 * f) / Math.max(0.5, k), color: i > N - 4 && t.head ? C.ice : C.blueText, alpha: Math.min(1, t.alpha * (0.15 + 0.55 * f) * lf * draftF) });
+          .stroke({ width: (0.6 + 2.2 * f) / Math.max(0.5, k), color: i > N - 4 && t.head ? C.ice : C.blueText, alpha: Math.min(1, t.alpha * (0.15 + 0.55 * f) * lf * draftF * tv) });
         prev = p;
       }
     }
@@ -1443,7 +1494,9 @@ export class Scene implements SceneApi {
       const x = clamp(p.x - lw / 2, 8, W - lw - 8), y = Math.max(8, p.y - 30);
       G.label.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       const gb = { x0: x, x1: x + lw, y0: y, y1: y + 26 };
-      const under = hits(gb, boxes.slice(0, nChrome));
+      // A Galaxy off screen keeps its label off screen too (no labels pinned to the edge).
+      const away = p.x < 0 || p.x > W || p.y < -G.R * k * 2 || p.y > this.H;
+      const under = away || hits(gb, boxes.slice(0, nChrome));
       G.label.style.opacity = under ? "0" : String(Math.min(1, this.introA * 1.4) * (!hl || hl.gals.has(G) ? 1 : 1 - 0.65 * hlA));
       if (!under) boxes.push(gb);
     }
@@ -1464,7 +1517,8 @@ export class Scene implements SceneApi {
       const x = p.x - w / 2, y = p.y + Math.max(sr + 12, outer + 6);
       const box = { x0: x, x1: x + w, y0: y, y1: y + h };
       const clash = hits(box, boxes) || discs.some((o) => o.s !== s && hits(box, [o]));
-      const show = !s.dying && a > 0.3 && !clash && k > 0.22;
+      const sG = this.galaxies.get(s.data.repo);
+      const show = !s.dying && a > 0.3 && !clash && k * (sG?.scale ?? 1) > 0.22 && this.vis(sG, k) > 0.5;
       if (show) boxes.push(box);
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       el.classList.toggle("off", !show);
@@ -1479,7 +1533,7 @@ export class Scene implements SceneApi {
       const x = p.x + off + 6, y = p.y - 7;
       const w = el.offsetWidth || 40;
       const box = { x0: x, x1: x + w, y0: y, y1: y + 14 };
-      const fits = k > 0.5 && !hits(box, boxes);
+      const fits = k * (this.galaxies.get(n.data.repo)?.scale ?? 1) > 0.5 && !hits(box, boxes);
       if (fits) boxes.push(box);
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       el.style.opacity = fits ? String(Math.min(1, n.satA * 1.2) * (!hl || hl.nodes.has(n) ? 1 : 1 - 0.65 * hlA)) : "0";
@@ -1563,12 +1617,12 @@ export class Scene implements SceneApi {
     const k = this.cam.k;
     const sr = 5 * nodeK(k);
     for (const n of this.nodes.values()) {
-      if (n.dying || n.ap < 0.5 || (n.data.external && !n.sun)) continue;
+      if (n.dying || n.ap < 0.5 || (n.data.external && !n.sun) || this.vis(this.galaxies.get(n.data.repo), k) < 0.5) continue;
       const p = this.toScreen(n.x, n.y), d = Math.hypot(p.x - mx, p.y - my);
       if (d <= sr + 9 && d < bd) { bd = d; best = n; }
     }
     for (const s of this.suns.values()) {
-      if (s.dying || s.ap < 0.5) continue;
+      if (s.dying || s.ap < 0.5 || this.vis(this.galaxies.get(s.data.repo), k) < 0.5) continue;
       const p = this.toScreen(s.x, s.y), d = Math.hypot(p.x - mx, p.y - my);
       if (d <= s.r * sunK(k) + 8 && d < bd) { bd = d; best = s; }
     }
@@ -1648,7 +1702,7 @@ export class Scene implements SceneApi {
     const root = this.o.root;
     const blocked = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome], .lab, .hit, button, a");
     const zoom = d3zoom<HTMLElement, unknown>()
-      .scaleExtent([0.06, 4])
+      .scaleExtent([0.06, this.kMax])
       .clickDistance(5)
       .filter((ev: MouseEvent & WheelEvent) => !blocked(ev.target) && (!ev.ctrlKey || ev.type === "wheel") && !ev.button)
       .on("zoom", (ev: { sourceEvent: unknown; transform: { x: number; y: number; k: number } }) => {

@@ -64,6 +64,14 @@ const refs = (here: string, rs: Ref[] = []) => ({ nodes: rs.map(ref(here)) });
 
 type Mode = "ok" | "401" | "403" | "404" | "rate" | "network";
 const modes = new Map<string, Mode>();
+/** Repos of the `fleet` owner (the 30-repo fixture) answer with a few open issues each, by name. */
+function fleet(full: string): Issue[] | undefined {
+  if (!full.startsWith("fleet/")) return undefined;
+  let h = 0;
+  for (const c of full) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const n = h % 9;
+  return Array.from({ length: n }, (_, i) => ({ number: i + 1, title: `Task ${i + 1}` }));
+}
 
 const port = Number(process.env.FAKE_GITHUB_PORT ?? 4790);
 
@@ -127,7 +135,7 @@ createServer(async (req, res) => {
   seen.set(full, (seen.get(full) ?? new Set()).add(token));
   const want = tokens.get(full);
   if (want && token !== want) return json(401, { message: "Bad credentials" });
-  const issues = repos.get(full);
+  const issues = repos.get(full) ?? fleet(full);
   if (!issues) return json(200, { data: { repository: null }, errors: [{ type: "NOT_FOUND", message: `Could not resolve to a Repository with the name '${full}'.` }] });
   return json(200, {
     data: {
