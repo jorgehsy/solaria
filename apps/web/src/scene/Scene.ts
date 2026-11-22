@@ -22,7 +22,13 @@ const rnd = Math.random;
 /** What the tooltip shows. React renders it; the Scene only positions it. */
 export type TipInfo =
   | { kind: "sun"; repo: string; number: number; title: string; url: string; done: number; total: number; touch: boolean }
-  | { kind: "issue"; repo: string; number: number; title: string; url: string; state: IssueState; mapTitle: string | null; assignees: string[]; touch: boolean };
+  | {
+    kind: "issue"; repo: string; number: number; title: string; url: string; state: IssueState; mapTitle: string | null; assignees: string[]; touch: boolean;
+    /** External Planet: tagged "external" on the card. */
+    external: boolean;
+    /** Blockers in repos outside the config, as plain text. */
+    outsideBlockers: string[];
+  };
 
 export interface Searchable {
   key: string;
@@ -376,6 +382,11 @@ export class Scene implements SceneApi {
       else if (st === "done") g.circle(0, 0, r * 0.5).fill({ color: C.ice, alpha: 0.4 });
       else g.circle(0, 0, r - 0.85).stroke({ width: 1.7, color: C.muted });
     }
+    // External Planet: a dotted halo, so it reads as "not one of your repos" before any hover.
+    if (n.data.external) for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * TAU;
+      g.circle(Math.cos(a) * (r + 4), Math.sin(a) * (r + 4), 0.9).fill({ color: C.muted, alpha: 0.9 });
+    }
     const GL: Record<IssueState, [number, number, number]> = {
       doing: [C.sky, 0.55, 5.4], review: [C.blueText, 0.34, 4.6], blocked: [C.orange, 0.26, 4.2], todo: [C.ice, 0.11, 3.6], done: [C.ice, 0.05, 2.6],
     };
@@ -525,8 +536,16 @@ export class Scene implements SceneApi {
     const live = (n: Node) => !(n.dying && n.ap < 0.05);
     const bySun = new Map<Sun, Node[]>();
     for (const n of this.nodes.values()) {
-      if (!live(n) || !repos.includes(n.data.repo)) continue;
+      if (!live(n)) continue;
       const sun = n.data.map ? this.suns.get(n.data.map) : undefined;
+      // An External Planet has no Galaxy of its own: it exists only in its Map's orbit.
+      if (n.data.external) {
+        n.sun = sun && !sun.dying && repos.includes(sun.data.repo) ? sun : null;
+        n.role = "planet";
+        if (n.sun) bySun.set(n.sun, [...(bySun.get(n.sun) ?? []), n]);
+        continue;
+      }
+      if (!repos.includes(n.data.repo)) continue;
       if (sun && !sun.dying) {
         n.sun = sun;
         if (sun.data.repo === n.data.repo) {
@@ -610,16 +629,16 @@ export class Scene implements SceneApi {
     s.ty = G.y + s.dy;
   }
   private targetNode(n: Node) {
-    const G = this.galaxies.get(n.data.repo);
-    if (!G) return;
     if (n.role === "planet" && n.sun) {
       const a = n.theta0 + n.omega * this.T;
       n.tx = n.sun.x + Math.cos(a) * n.ring;
       n.ty = n.sun.y + Math.sin(a) * n.ring;
-    } else {
-      n.tx = G.x + n.ldx;
-      n.ty = G.y + n.ldy;
+      return;
     }
+    const G = this.galaxies.get(n.data.repo);
+    if (!G) return;
+    n.tx = G.x + n.ldx;
+    n.ty = G.y + n.ldy;
   }
 
   /* ----- camera ----- */
@@ -1235,7 +1254,8 @@ export class Scene implements SceneApi {
       if (n.hist) { n.hist.push(n.x, n.y); if (n.hist.length > 60) n.hist.splice(0, 2); }
       if (!n.hold) n.ap += (n.apTo - n.ap) * (calm ? 1 : Math.min(1, dt * (n.dying ? 2 : 3)));
       if (n.dying && n.ap < 0.02) { this.destroyNode(n); this.nodes.delete(key); continue; }
-      const a = clamp(n.ap, 0, 1.4), al = Math.min(1, a);
+      // An External Planet whose Sun is not drawn (yet) has nowhere to be.
+      const a = n.data.external && !n.sun ? 0 : clamp(n.ap, 0, 1.4), al = Math.min(1, a);
       n.body.position.set(n.x, n.y);
       n.body.scale.set(sc * a);
       n.body.alpha = al;
@@ -1543,7 +1563,7 @@ export class Scene implements SceneApi {
     const k = this.cam.k;
     const sr = 5 * nodeK(k);
     for (const n of this.nodes.values()) {
-      if (n.dying || n.ap < 0.5) continue;
+      if (n.dying || n.ap < 0.5 || (n.data.external && !n.sun)) continue;
       const p = this.toScreen(n.x, n.y), d = Math.hypot(p.x - mx, p.y - my);
       if (d <= sr + 9 && d < bd) { bd = d; best = n; }
     }
@@ -1583,7 +1603,7 @@ export class Scene implements SceneApi {
     } else {
       const d = n.data;
       const map = d.map ? this.suns.get(d.map) : undefined;
-      info = { kind: "issue", repo: d.repo, number: d.number, title: d.title, url: d.url, state: d.state, mapTitle: map ? map.data.title : null, assignees: d.state === "done" ? [] : d.assignees, touch };
+      info = { kind: "issue", repo: d.repo, number: d.number, title: d.title, url: d.url, state: d.state, mapTitle: map ? map.data.title : null, assignees: d.state === "done" ? [] : d.assignees, touch, external: !!d.external, outsideBlockers: d.outsideBlockers ?? [] };
     }
     const key = JSON.stringify(info);
     if (key !== this.tipKey) {

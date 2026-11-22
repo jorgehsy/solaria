@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Poller, universeStatus } from "./poller.ts";
 import type { FetchResult } from "../github/client.ts";
+import { chooseToken } from "../config/tokens.ts";
 import type { TokenChoice } from "../config/tokens.ts";
 
 const tok = (repo: string): TokenChoice => ({ kind: "token", repo, variable: "GITHUB_TOKEN", token: "t" });
@@ -24,6 +25,25 @@ function setup(tokens: TokenChoice[], answers: Record<string, FetchResult[]>, su
 }
 
 describe("Poller", () => {
+  it("reads each owner's repos with that owner's token, and a rejected owner token never falls back", async () => {
+    const env = { GITHUB_TOKEN: "main", GITHUB_TOKEN_GLOBEX: "globex", GITHUB_TOKEN_UMBRELLA: "wrong" };
+    const sent: [string, string][] = [];
+    const p = new Poller({
+      tokens: ["acme/web", "globex/core", "umbrella/lab"].map((r) => chooseToken(r, env)),
+      fetchRepo: async (repo, token) => {
+        sent.push([repo, token]);
+        return repo === "umbrella/lab" ? { ok: false, code: "bad_token", message: "401", rate: null } : ok(repo, [1]);
+      },
+      log: () => undefined,
+    });
+    await p.pollOnce();
+    await p.pollOnce();
+    expect(sent).toEqual([["acme/web", "main"], ["globex/core", "globex"], ["umbrella/lab", "wrong"], ["acme/web", "main"], ["globex/core", "globex"], ["umbrella/lab", "wrong"]]);
+    const s = p.snapshot();
+    expect(s.repos.map((r) => [r.repo, r.ok, r.code])).toEqual([["acme/web", true, undefined], ["globex/core", true, undefined], ["umbrella/lab", false, "bad_token"]]);
+    expect(Object.keys(s.universe.issues)).toEqual(["acme/web#1", "globex/core#1"]);
+  });
+
   it("starts loading, then builds the snapshot from the replies", async () => {
     const { p } = setup([tok("acme/web")], { "acme/web": [ok("acme/web", [1, 2])] });
     expect(p.snapshot().status).toEqual({ state: "loading" });

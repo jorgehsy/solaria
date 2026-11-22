@@ -104,10 +104,31 @@ describe("buildUniverse", () => {
       expect(u.issues["acme/api#8"]).toMatchObject({ repo: "acme/api", closed: true, map: "acme/web#1" });
     });
 
-    it("leaves out sub-issues of repos outside the config (External Planets come later)", () => {
-      const u = build({ "acme/web": web({ issues: [issue(1, "Map: Ext", kids(kid("other/lib", 4, "Theirs"), kid("acme/web", 2, "Ours"))), issue(2, "Ours")] }) });
-      expect(Object.keys(u.issues)).toEqual(["acme/web#2"]);
-      expect(u.maps["acme/web#1"]).toBeDefined();
+    it("makes a sub-issue in a repo outside the config an External Planet of its Map, with no PR signals", () => {
+      const u = build({ "acme/web": web({
+        issues: [issue(1, "Map: Ext", kids(kid("other/lib", 4, "Theirs"), kid("other/lib", 5, "Shipped", "CLOSED"), kid("acme/web", 2, "Ours"))), issue(2, "Ours")],
+        prs: [{ number: 50, title: "PR", url: "u50", isDraft: false, createdAt: T, closingIssuesReferences: { nodes: [ref("other/lib", 4)] } }],
+      }) });
+      expect(UniverseData.parse(u)).toEqual(u);
+      expect(u.issues["other/lib#4"]).toEqual({
+        key: "other/lib#4", repo: "other/lib", number: 4, title: "Theirs", url: "https://github.com/other/lib/issues/4",
+        map: "acme/web#1", blockers: [], assignees: [], closed: false, created: Date.parse(T), closedAt: 0, external: true,
+      });
+      expect(u.issues["other/lib#5"]).toMatchObject({ map: "acme/web#1", closed: true, external: true });
+      expect(u.issues["acme/web#2"]?.external).toBeUndefined();
+      expect(u.prs["acme/web!50"]?.closes).toEqual([]);
+      expect(states(u)).toMatchObject({ "other/lib#4": "todo", "other/lib#5": "done" });
+      expect(u.repos).toEqual(["acme/web"]);
+    });
+
+    it("an External Planet never blocks a configured issue", () => {
+      const u = build({ "acme/web": web({ issues: [
+        issue(1, "Map: Ext", kids(kid("other/lib", 4, "Theirs"), kid("acme/web", 2, "Ours"))),
+        issue(2, "Ours", { body: "Blocked by: other/lib#4" }),
+      ] }) });
+      expect(u.issues["acme/web#2"]?.blockers).toEqual([]);
+      expect(u.issues["acme/web#2"]?.outsideBlockers).toEqual(["other/lib#4"]);
+      expect(states(u)["acme/web#2"]).toBe("todo");
     });
   });
 
@@ -161,6 +182,19 @@ describe("buildUniverse", () => {
       // #2 is a closed Planet (kept, never blocks), #3 and #5 are closed (not read), other/lib is not configured.
       expect(u.issues["acme/web#6"]?.blockers).toEqual(["acme/web#2"]);
       expect(states(u)["acme/web#6"]).toBe("todo");
+    });
+
+    it("keeps blockers in repos outside the config as plain-text refs, never as state", () => {
+      const u = build({ "acme/web": web({ issues: [
+        issue(1, "Work", { body: "Blocked by: other/lib#4, Other/Lib#4, other-org/x#2", blockedBy: { nodes: [
+          { ...ref("third/repo", 9), state: "OPEN" }, { ...ref("third/repo", 10), state: "CLOSED" },
+        ] } }),
+        issue(2, "Clean", { body: "Blocked by: #3" }),
+      ] }) });
+      expect(u.issues["acme/web#1"]?.blockers).toEqual([]);
+      expect(u.issues["acme/web#1"]?.outsideBlockers).toEqual(["other/lib#4", "other-org/x#2", "third/repo#9"]);
+      expect(u.issues["acme/web#2"]?.outsideBlockers).toBeUndefined();
+      expect(states(u)["acme/web#1"]).toBe("todo");
     });
 
     it("Draft PR open: a linked draft PR; PR text is never scanned", () => {

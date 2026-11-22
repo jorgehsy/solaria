@@ -14,6 +14,7 @@ export const Tooltip = forwardRef<HTMLDivElement, { tip: TipInfo | null }>(funct
             {tip.kind === "issue" && tip.mapTitle ? ` · ${tip.mapTitle}` : ""}
           </span>
           <span className="tip-title">{tip.title}</span>
+          {tip.kind === "issue" && tip.outsideBlockers.map((r) => <span key={r} className="tip-outside">{S.tip.outsideBlocker(r)}</span>)}
           <span className="tip-foot">
             {tip.kind === "sun" ? (
               <span className="chip"><span className="g g-sun" aria-hidden="true" />{S.tip.sunChip(tip.done, tip.total)}</span>
@@ -22,6 +23,7 @@ export const Tooltip = forwardRef<HTMLDivElement, { tip: TipInfo | null }>(funct
                 <span className={`g g-${tip.state === "done" ? "todo" : tip.state}`} aria-hidden="true" />
                 {S.state[tip.state]}
                 {tip.assignees.length ? S.tip.planetAssigned(tip.assignees.join(", ")) : ""}
+                {tip.external && <span className="tip-tag">{S.tip.external}</span>}
               </span>
             )}
             {tip.touch && <a href={tip.url} target="_blank" rel="noopener">{S.tip.openOnGithub}</a>}

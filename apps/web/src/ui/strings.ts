@@ -88,6 +88,8 @@ export const S = {
     planetAssigned: (names: string) => ` · assigned to ${names}`,
     ref: (repo: string, n: number, mapTitle: string) => `${repo} #${n} · ${mapTitle}`,
     openOnGithub: "Open on GitHub",
+    external: "external",
+    outsideBlocker: (ref: string) => `blocked by ${ref} (not in your universe)`,
     hitAria: (repo: string, n: number, title: string) => `${repo} #${n}: ${title}`,
   },
   statusTip: {

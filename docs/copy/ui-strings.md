@@ -63,6 +63,8 @@ Voice: space words for events and objects, short and playful, with the GitHub wo
 | `tip.planetAssigned` | · assigned to ${names} | Appended to the Planet chip; names comma-separated (`alice, bob`). Artifact L2300 |
 | `tip.ref` | ${repo} #${n} · ${mapTitle} | Reference line under the title |
 | `tip.openOnGithub` | Open on GitHub | Link shown on touch devices. Artifact L2301 |
+| `tip.external` | external | Tag on an External Planet's card (sub-issue in a repo not in the config). Spec section 5 |
+| `tip.outsideBlocker` | blocked by ${ref} (not in your universe) | One line per blocker in a repo not in the config (`other/lib#4`). Plain text, no link. Spec section 5 |
 | `tip.hitAria` | ${repo} #${n}: ${title} | aria-label of the hit target. Artifact L2305 |
 | `log.showInUniverse` | Show in the Universe | Title of the log row button. Artifact L1032 |
 | `log.openOnGithub` | Open on GitHub | Title of the log external link. Artifact L1032 |

@@ -10,15 +10,22 @@ const time = (s: string | null | undefined): number => {
   return Number.isNaN(t) ? 0 : t;
 };
 const unique = <T>(xs: T[]): T[] => [...new Set(xs)];
+/** Refs as written, deduplicated the way GitHub compares names (case-insensitive), first spelling kept. */
+const uniqueRefs = (xs: string[]): string[] => {
+  const seen = new Set<string>();
+  return xs.filter((x) => !seen.has(x.toLowerCase()) && !!seen.add(x.toLowerCase()));
+};
 
 /**
  * Build the Universe from GitHub's replies. Pure: replies in, Universe out.
  * Reading rules (spec section 5, `docs/repo-requirements.md`):
  * - A Map is an open issue titled `Map: `/`Mapa: ` with at least one sub-issue; its title loses the prefix.
  * - Its sub-issues are Planets (closed ones too, for progress), except children titled as Maps.
+ *   A sub-issue in a repo outside the config is an External Planet: from the same reply, no extra call.
  * - Every other open issue is Gas.
  * - Blockers come from `Blocked by:` body lines and GitHub's native blocked-by; PR links only from
- *   GitHub's closing references. Refs to repos outside the config are dropped here.
+ *   GitHub's closing references. Refs to repos outside the config never count: blockers there are kept
+ *   as plain text (`outsideBlockers`) for the detail card; PR links there are dropped.
  * The state itself is derived in `@solaria/universe` (`issueStates`), not stored.
  * Galaxies keep config order; a repo without a reply (failed, never read) is still a Galaxy, with no issues.
  */
@@ -33,6 +40,7 @@ export function buildUniverse(repos: readonly string[], replies: ReadonlyMap<str
   // Maps first, across every repo: a Planet may live in another configured repo.
   const mapOf = new Map<string, string>();
   const closedKids = new Map<string, { kid: GqlSubIssue; repo: string; map: string }>();
+  const externalKids = new Map<string, { kid: GqlSubIssue; map: string }>();
   for (const repo of repos) {
     for (const i of replies.get(repo)?.issues ?? []) {
       const kids = i.subIssues;
@@ -42,7 +50,11 @@ export function buildUniverse(repos: readonly string[], replies: ReadonlyMap<str
       for (const kid of kids.nodes) {
         if (isMapTitle(kid.title)) continue; // A Map never becomes a Planet.
         const kidRepo = inUniverse(kid.repository.nameWithOwner);
-        if (!kidRepo) continue; // External Planets: slice 5.
+        if (!kidRepo) {
+          const extKey = issueKey(kid.repository.nameWithOwner, kid.number);
+          if (!externalKids.has(extKey)) externalKids.set(extKey, { kid, map: key });
+          continue;
+        }
         const kidKey = issueKey(kidRepo, kid.number);
         if (!mapOf.has(kidKey)) mapOf.set(kidKey, key);
         if (kid.state === "CLOSED") closedKids.set(kidKey, { kid, repo: kidRepo, map: key });
@@ -51,15 +63,19 @@ export function buildUniverse(repos: readonly string[], replies: ReadonlyMap<str
   }
 
   const blockersOf = new Map<string, string[]>();
+  const outsideOf = new Map<string, string[]>();
   for (const repo of repos) {
     for (const i of replies.get(repo)?.issues ?? []) {
       const key = issueKey(repo, i.number);
       if (u.maps[key]) continue;
-      const refs = [
-        ...blockedByRefs(i.body, repo).map((r) => keyOf({ number: r.number, repository: { nameWithOwner: r.repo } })),
-        ...(i.blockedBy?.nodes ?? []).map(keyOf),
+      const raw: GqlRef[] = [
+        ...blockedByRefs(i.body, repo).map((r) => ({ number: r.number, repository: { nameWithOwner: r.repo } })),
+        // A closed native blocker blocks nothing, wherever it lives.
+        ...(i.blockedBy?.nodes ?? []).filter((b) => b.state !== "CLOSED"),
       ];
-      blockersOf.set(key, unique(refs.filter((k): k is string => !!k && k !== key)));
+      blockersOf.set(key, unique(raw.map(keyOf).filter((k): k is string => !!k && k !== key)));
+      const outside = uniqueRefs(raw.filter((r) => !inUniverse(r.repository.nameWithOwner)).map((r) => issueKey(r.repository.nameWithOwner, r.number)));
+      if (outside.length) outsideOf.set(key, outside);
       u.issues[key] = {
         key, repo, number: i.number, title: i.title, url: i.url,
         map: mapOf.get(key) ?? null, blockers: [], assignees: i.assignees.nodes.map((a) => a.login),
@@ -77,11 +93,23 @@ export function buildUniverse(repos: readonly string[], replies: ReadonlyMap<str
     } satisfies Issue;
   }
 
+  // External Planets: what the sub-issues reply says, nothing more (no assignees, blockers or PR links).
+  for (const [key, { kid, map }] of externalKids) {
+    u.issues[key] = {
+      key, repo: kid.repository.nameWithOwner, number: kid.number, title: kid.title, url: kid.url,
+      map, blockers: [], assignees: [], closed: kid.state === "CLOSED", created: time(kid.createdAt),
+      closedAt: kid.state === "CLOSED" ? time(kid.closedAt) : 0, external: true,
+    } satisfies Issue;
+  }
+
   // Only refs to issues in the Universe stay: anything else is closed, unread or outside the config.
   const present = (k: string) => !!u.issues[k] || !!u.maps[k];
   for (const [key, bs] of blockersOf) {
     const issue = u.issues[key];
-    if (issue) issue.blockers = bs.filter(present);
+    if (!issue) continue;
+    issue.blockers = bs.filter((k) => present(k) && !u.issues[k]?.external);
+    const outside = outsideOf.get(key);
+    if (outside) issue.outsideBlockers = outside;
   }
 
   for (const repo of repos) {
