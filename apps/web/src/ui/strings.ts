@@ -175,6 +175,7 @@ export const S = {
     network: { hint: "Can't reach api.github.com. Showing the last good data. Check your connection; Solaria retries on its own." },
     notFound: {
       hint: (repo: string, suggestion: string) => `GitHub has no repo ${repo}. Check the spelling in solaria.config.json (did you mean ${suggestion}?).`,
+      hintPlain: (repo: string) => `GitHub has no repo ${repo}. Check the spelling in solaria.config.json.`,
       snippet: (suggestion: string) => `"repos": ["${suggestion}"]`,
     },
     rateLimited: { hint: "Showing the last good data until the limit resets." },

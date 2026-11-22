@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "./app.ts";
 import { ConfigError } from "./config/config.ts";
 import { DEFAULT_API_URL, fetchRepo } from "./github/client.ts";
+import { suggestRepo } from "./github/suggest.ts";
 import { Poller } from "./live/poller.ts";
 import { startup } from "./startup.ts";
 import type { Startup } from "./startup.ts";
@@ -41,7 +42,9 @@ if (setup.mode === "live") {
   if (apiUrl !== DEFAULT_API_URL) console.log(`Reading GitHub at ${apiUrl}`);
   // SOLARIA_POLL_MS shortens the 60 s interval; only the end-to-end tests use it.
   const fastMs = Number(setup.env.SOLARIA_POLL_MS) || undefined;
-  const poller = new Poller({ tokens: setup.tokens, fetchRepo: (repo, token) => fetchRepo(repo, token, { apiUrl }), fastMs });
+  const poller = new Poller({ tokens: setup.tokens, fetchRepo: (repo, token) => fetchRepo(repo, token, { apiUrl }),
+    suggest: (repo, token) => suggestRepo(repo, token, { apiUrl }), fastMs,
+  });
   poller.start();
   app = createApp({ snapshot: () => poller.snapshot(), feed: poller, webDist });
 } else {

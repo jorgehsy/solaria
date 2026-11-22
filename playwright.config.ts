@@ -4,7 +4,8 @@ import path from "node:path";
 const PORT = 4748;
 const LIVE_PORT = 4749;
 const READING_PORT = 4750;
-const OWNERS_PORT = 4751;
+const ERRORS_PORT = 4751;
+const OWNERS_PORT = 4755;
 export const FAKE_GITHUB = "http://127.0.0.1:4790";
 
 /**
@@ -27,6 +28,7 @@ export default defineConfig({
     { name: "live", testMatch: /live\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${LIVE_PORT}` } },
     // Reading specs share the fake repo acme/maps (one changes it), so they run one at a time.
     { name: "reading", testMatch: /reading\.spec\.ts/, workers: 1, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${READING_PORT}` } },
+    { name: "errors", testMatch: /errors\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${ERRORS_PORT}` } },
     // Several owners (slice 5): three owners, one token each, against repos nobody else changes.
     { name: "owners", testMatch: /owners\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, baseURL: `http://127.0.0.1:${OWNERS_PORT}` } },
   ],
@@ -52,6 +54,11 @@ export default defineConfig({
     {
       command: `PORT=${READING_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/reading")} pnpm --filter @solaria/server start`,
       url: `http://127.0.0.1:${READING_PORT}/api/snapshot`,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `PORT=${ERRORS_PORT} GITHUB_API_URL=${FAKE_GITHUB} SOLARIA_DIR=${path.resolve(import.meta.dirname, "e2e/fixtures/errors")} pnpm --filter @solaria/server start`,
+      url: `http://127.0.0.1:${ERRORS_PORT}/api/snapshot`,
       reuseExistingServer: !process.env.CI,
     },
     // `env -u`: a GITHUB_TOKEN in the shell would win over the fixture's .env and hide the per-owner check.
