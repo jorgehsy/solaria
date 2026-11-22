@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { ServerSnapshot } from "@solaria/contract";
 import type { DemoEventKind } from "@solaria/universe";
 import { Controller } from "./live/controller.ts";
-import type { Targets } from "./live/controller.ts";
+import type { ControllerState, Targets } from "./live/controller.ts";
 import { Scene } from "./scene/Scene.ts";
 import type { Searchable, TipInfo } from "./scene/Scene.ts";
 import { S } from "./ui/strings.ts";
@@ -12,7 +12,7 @@ import { ActivityLog } from "./ui/ActivityLog.tsx";
 import { DemoPanel } from "./ui/DemoPanel.tsx";
 import { Search } from "./ui/Search.tsx";
 import { Tooltip } from "./ui/Tooltip.tsx";
-import { Notice } from "./ui/Notice.tsx";
+import { Card } from "./ui/Card.tsx";
 import { IconCollapse, IconDemo, IconExpand, IconFit, IconSearch, IconTour } from "./ui/icons.tsx";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -73,14 +73,16 @@ export function App() {
       } else {
         setNotice({ title: S.err.webgl.title, text: r === "nowebgl" ? S.err.webgl.text : S.err.webgl.initFailed });
       }
-      let mode = "demo" as const;
+      let snap: ServerSnapshot = { mode: "demo" };
       try {
         const res = await fetch("/api/snapshot");
-        mode = ServerSnapshot.parse(await res.json()).mode;
+        snap = ServerSnapshot.parse(await res.json());
       } catch {
         // No server answer (for example the web app opened on its own): the demo still runs in the browser.
       }
-      if (alive && mode === "demo" && controller.getState().mode === "loading") controller.startDemo();
+      if (!alive || controller.getState().mode !== "loading") return;
+      if (snap.mode === "demo") controller.startDemo();
+      else controller.live(snap);
     })();
     const prune = setInterval(() => controller.pruneLog(), 20_000);
     return () => {
@@ -198,7 +200,8 @@ export function App() {
     <div className={cls} ref={rootRef} tabIndex={0} role="group" aria-label={S.brand.ariaLabel} aria-describedby="uDesc">
       <div className="gl" ref={glRef} aria-hidden="true" />
       <div className="labels" ref={labelsRef} />
-      <Header mode={state.mode} checkedAt={state.checkedAt} />
+      {state.mode === "demo" && <div className="veil" aria-hidden="true" />}
+      <Header mode={state.mode} checkedAt={state.checkedAt} error={state.status.state === "error"} />
       <div className="tools" data-chrome>
         <button ref={searchBtn} className="tool" type="button" aria-label={S.tool.search} title={S.tool.search} aria-expanded={searchOpen} aria-controls="search" onClick={() => setSearchOpen((o) => !o)}><IconSearch /></button>
         <button className="tool" type="button" aria-pressed={tourOn} aria-label={tourLabel} title={tourLabel} onClick={() => setTour(!tourOn)}><IconTour /></button>
@@ -211,8 +214,19 @@ export function App() {
       {searchOpen && <Search searchables={() => sceneRef.current?.searchables() ?? []} onChoose={choose} onClose={closeSearch} />}
       {demoOpen && <DemoPanel live={state.mode === "live"} onEvent={demo} />}
       <Tooltip ref={tipRef} tip={tip} />
-      {notice && <Notice title={notice.title} text={notice.text} />}
+      <UniverseCard state={state} />
+      {notice && <Card title={notice.title} hint={notice.text} />}
       <p className="sr-only" id="uDesc">{desc}</p>
     </div>
   );
+}
+
+/** The one universe-wide card, if any: demo with no token, a rejected token, or no repos. */
+function UniverseCard({ state }: { state: ControllerState }) {
+  const U = S.universe;
+  if (state.mode === "demo") return <Card title={U.demoNoToken.title} hint={U.demoNoToken.hint} snippet={U.demoNoToken.snippet} />;
+  if (state.mode !== "live") return null;
+  if (state.status.state === "error" && state.status.code === "bad_token") return <Card title={U.badToken.title} hint={U.badToken.hint} snippet={U.badToken.snippet} />;
+  if (state.status.state === "ok" && !state.repos.length) return <Card title={U.noRepos.title} hint={U.noRepos.hint} snippet={U.noRepos.snippet} />;
+  return null;
 }

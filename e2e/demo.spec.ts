@@ -11,11 +11,19 @@ test("opens the demo Universe on 127.0.0.1", async ({ page }) => {
   await expect(page.locator("#uDesc")).toContainText("Maps, across 3 repos");
 });
 
+test("shows the Demo mode: no token card with the setup lines", async ({ page }) => {
+  await page.goto("/");
+  const card = page.getByRole("alert");
+  await expect(card.getByRole("heading", { name: "Demo mode: no token" })).toBeVisible();
+  await expect(card).toContainText("cp .env.example .env");
+  await expect(card).toContainText("GITHUB_TOKEN=github_pat_xxxxxxxx");
+});
+
 test("demo panel buttons play events into the Activity log", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".lab-map")).toHaveCount(4);
   await page.keyboard.press("d");
-  await expect(page.getByRole("heading", { name: "Demo mode" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Demo mode", exact: true })).toBeVisible();
   await page.locator("button[data-ev=rift]").click();
   await expect(page.locator(".log li").first()).toContainText("Rift");
   await expect(page.locator(".log li").first()).toContainText("New issue #");
