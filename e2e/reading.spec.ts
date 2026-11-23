@@ -41,6 +41,16 @@ test("draws the Sun with its Planets' states and a Satellite", async ({ page }) 
       await expect(page.locator(".tip")).toContainText(`acme/maps #${n}`, { timeout: 500 });
     }).toPass({ timeout: 8000 });
     await expect(page.locator(".tip")).toContainText(state);
+    if (n === "2") {
+      // The card stays while the pointer crosses the gap into it, so its GitHub link can be clicked.
+      const link = page.locator(".tip a", { hasText: "Open on GitHub" });
+      const box = (await link.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 8 });
+      await page.waitForTimeout(600);
+      await expect(page.locator(".tip")).toContainText("acme/maps #2");
+      await expect(link).toHaveAttribute("href", /\/acme\/maps\/issues\/2$/);
+      await link.hover();
+    }
     await page.mouse.move(5, 5);
   }
 });
