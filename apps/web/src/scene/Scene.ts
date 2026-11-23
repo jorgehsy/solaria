@@ -18,6 +18,8 @@ const TAU = Math.PI * 2;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const rnd = Math.random;
+/** Auto tour: how long the camera rests on an event's spot before the event plays. */
+const EVENT_HOLD_MS = 1000;
 
 /** What the tooltip shows. React renders it; the Scene only positions it. */
 export type TipInfo =
@@ -176,6 +178,8 @@ export class Scene implements SceneApi {
   private hit!: HTMLAnchorElement;
   private flight: gsap.core.Tween | null = null;
   private tour: { i: number; timer: ReturnType<typeof setTimeout> | undefined } | null = null;
+  /** An event's camera travel (flight + hold) still under way: calling it lets the event play now. */
+  private evTravel: (() => void) | null = null;
   private cleanup: (() => void)[] = [];
   /* Error and empty states (spec section 9): per repo look, card and quiet line. */
   private notes = new Map<string, GalaxyNote>();
@@ -722,6 +726,8 @@ export class Scene implements SceneApi {
   }
   private stopFlight() {
     if (this.flight) { this.flight.kill(); this.flight = null; this.fxBusy = Math.max(0, this.fxBusy - 1); this.syncZoom({ ...this.cam }); }
+    // Whatever moved the camera cut an event's travel short: the event plays where the camera is.
+    this.evTravel?.();
   }
   private frameBox(x0: number, y0: number, x1: number, y1: number, kMax = 1.4): Cam {
     const { W, H } = this;
@@ -795,13 +801,31 @@ export class Scene implements SceneApi {
       this.flyTo(this.zoomAbout(t, 1.08), 20000, "sine.inOut", () => { if (this.tour === me) this.tourNext(); });
     });
   }
+  /**
+   * Auto tour: fly to where an event will happen, hold EVENT_HOLD_MS so the eye lands, then let it play.
+   * `done` is called exactly once, also when input or another flight cuts the travel short.
+   */
   travelForEvent(t: Targets, done: () => void): void {
     const me = this.tour;
     if (me) clearTimeout(me.timer);
-    this.flyTo(this.frameTargets(t), 900, "power2.inOut", () => {
+    let hold: ReturnType<typeof setTimeout> | undefined;
+    let fired = false;
+    const finish = () => {
+      if (fired) return;
+      fired = true;
+      clearTimeout(hold);
+      if (this.evTravel === finish) this.evTravel = null;
       done();
-      if (me && this.tour === me) me.timer = setTimeout(() => { if (this.tour === me) this.tourNext(); }, 7000);
+    };
+    this.flyTo(this.frameTargets(t), 900, "power2.inOut", () => {
+      if (fired) return;
+      hold = setTimeout(() => {
+        finish();
+        if (me && this.tour === me) me.timer = setTimeout(() => { if (this.tour === me) this.tourNext(); }, 7000);
+      }, EVENT_HOLD_MS);
     });
+    // Set after flyTo: its own stopFlight must not end this travel, only an older one.
+    if (!fired) this.evTravel = finish;
   }
   recenter(): void {
     this.stopFlight();
