@@ -62,7 +62,7 @@ interface Colors {
   blue: number; blueText: number; orange: number; gas: number; human: number; agent: number;
 }
 
-interface Star { sp: Sprite; ux: number; uy: number; dx: number; dy: number; vx: number; vy: number }
+interface Star { sp: Sprite; s: number; ux: number; uy: number; dx: number; dy: number; vx: number; vy: number }
 interface Puff { sp: Sprite; ux: number; uy: number; s: number }
 interface Blob { sp: Sprite; x: number; y: number; a: number; h: number; on: boolean }
 interface Disc { x: number; y: number; r: number }
@@ -87,7 +87,7 @@ interface Galaxy {
 
 interface Sun extends Body {
   key: string; data: MapIssue; h1: number;
-  r: number; bodyR: number; R: number; rings: number[]; dx: number; dy: number;
+  r: number; bodyR: number; bodyGs: number; R: number; rings: number[]; dx: number; dy: number;
   done: number; total: number; prog01: number; progTo: number; progDrawn: number; flare: number;
   glow: Sprite; corona: Sprite; orbit: Graphics; body: Graphics; prog: Graphics;
   label: HTMLAnchorElement;
@@ -357,7 +357,7 @@ export class Scene implements SceneApi {
       const sp = this.sprite(this.tex.dot, srnd() < 0.35 ? C.sky : C.ice, a);
       sp.scale.set(s);
       rot.addChild(sp);
-      stars.push({ sp, ux, uy, dx: 0, dy: 0, vx: 0, vy: 0 });
+      stars.push({ sp, s, ux, uy, dx: 0, dy: 0, vx: 0, vy: 0 });
     }
     const puffs: Puff[] = [];
     for (let i = 0; i < 6; i++) {
@@ -447,19 +447,20 @@ export class Scene implements SceneApi {
 
   /* ----- Suns ----- */
   private drawSun(s: Sun) {
-    const g = s.body, r = s.r;
+    const g = s.body, r = s.r, gs = s.bodyGs;
     g.clear();
-    g.circle(0, 0, r + 8).fill({ color: this.C.deep, alpha: 0.9 });
+    g.circle(0, 0, r + 8 * gs).fill({ color: this.C.deep, alpha: 0.9 });
     g.circle(0, 0, r).fill({ color: this.C.ice });
     s.progDrawn = -1;
   }
   private drawProg(s: Sun) {
-    const g = s.prog, r = s.r + 5;
+    // r is already shrunk on the Horizon; the gap and line width must shrink with it.
+    const gs = s.bodyGs, g = s.prog, r = s.r + 5 * gs, w = 2.5 * gs;
     g.clear();
-    g.circle(0, 0, r).stroke({ width: 2.5, color: this.C.ice, alpha: 0.2 });
+    g.circle(0, 0, r).stroke({ width: w, color: this.C.ice, alpha: 0.2 });
     if (s.prog01 > 0.001) {
       const a0 = -Math.PI / 2, a1 = a0 + TAU * Math.min(1, s.prog01);
-      g.moveTo(Math.cos(a0) * r, Math.sin(a0) * r).arc(0, 0, r, a0, a1).stroke({ width: 2.5, color: this.C.sky, cap: "round" });
+      g.moveTo(Math.cos(a0) * r, Math.sin(a0) * r).arc(0, 0, r, a0, a1).stroke({ width: w, color: this.C.sky, cap: "round" });
     }
     s.progDrawn = s.prog01;
   }
@@ -480,7 +481,7 @@ export class Scene implements SceneApi {
     return {
       key: d.key, data: d, h1: hash01(d.key),
       x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, ap: 0, apTo: 1, hold: false, dying: false, fresh: true,
-      r: 15, bodyR: 0, R: 45, rings: [], dx: 0, dy: 0, done: 0, total: 0, prog01: 0, progTo: 0, progDrawn: -1, flare: 0,
+      r: 15, bodyR: 0, bodyGs: 1, R: 45, rings: [], dx: 0, dy: 0, done: 0, total: 0, prog01: 0, progTo: 0, progDrawn: -1, flare: 0,
       glow, corona, orbit, body, prog, label,
     };
   }
@@ -604,9 +605,9 @@ export class Scene implements SceneApi {
       if (!p) continue;
       s.dx = p.dx; s.dy = p.dy; s.r = p.r; s.R = p.R; s.rings = p.rings; s.done = p.done; s.total = p.total;
       if (!s.hold) s.progTo = p.total ? p.done / p.total : 0;
-      const g = s.orbit;
+      const g = s.orbit, gs = L.galaxies.get(s.data.repo)?.scale ?? 1;
       g.clear();
-      s.rings.forEach((r, i) => g.circle(0, 0, r).stroke({ width: 1, color: this.C.ice, alpha: 0.08 - i * 0.012 }));
+      s.rings.forEach((r, i) => g.circle(0, 0, r).stroke({ width: gs, color: this.C.ice, alpha: 0.08 - i * 0.012 }));
       s.label.href = s.data.url;
       s.label.setAttribute("aria-label", S.map.aria(s.data.title, p.done, p.total));
       const sub = p.total ? S.map.progress(p.done, p.total) : S.map.noSubIssues;
@@ -625,6 +626,8 @@ export class Scene implements SceneApi {
       if (!G || !p) continue;
       G.tx = p.x; G.ty = p.y; G.Rt = p.R; G.cloud = p.gas; G.foreign = p.foreign;
       G.tier = p.tier; G.scale = p.scale;
+      // Star sprites are sized in world px: shrink them with the rest of a Horizon Galaxy.
+      for (const st of G.stars) st.sp.scale.set(st.s * p.scale);
       G.count = input.openCount[repo] ?? 0;
       this.galaxyLabel(G);
       this.syncGas(G, input.gas.filter((g) => g.repo === repo).map((g) => g.key));
@@ -1310,7 +1313,7 @@ export class Scene implements SceneApi {
       s.body.position.set(s.x, s.y);
       s.body.scale.set(sunSc * a);
       s.body.alpha = Math.min(1, a);
-      if (s.bodyR !== s.r) { s.bodyR = s.r; this.drawSun(s); }
+      if (s.bodyR !== s.r || s.bodyGs !== gs) { s.bodyR = s.r; s.bodyGs = gs; this.drawSun(s); }
       if (!s.hold) s.prog01 += (s.progTo - s.prog01) * (calm ? 1 : Math.min(1, dt * 2.2));
       if (Math.abs(s.prog01 - s.progDrawn) > 0.002) this.drawProg(s);
       s.prog.position.set(s.x, s.y);
