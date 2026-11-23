@@ -18,6 +18,8 @@ const TAU = Math.PI * 2;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const rnd = Math.random;
+/** How long a hover card stays after the pointer leaves its body, so the pointer can reach the card's link. */
+const HOVER_GRACE_MS = 300;
 
 /** What the tooltip shows. React renders it; the Scene only positions it. */
 export type TipInfo =
@@ -160,6 +162,10 @@ export class Scene implements SceneApi {
   private vm: View = { repos: [], maps: new Map(), issues: new Map(), prs: new Map() };
   private claims = new Set<string>();
   private hover: Node | Sun | null = null;
+  /** When a lost hover closes its card: a grace so the pointer can cross the gap into the card. 0 = none pending. */
+  private hoverOff = 0;
+  /** The card's box and the gap it leaves to its body, in screen px, as last placed. */
+  private tipBox: { x: number; y: number; w: number; h: number; gapTop: number; gapBottom: number } | null = null;
   private selected: Node | Sun | null = null;
   private tipFor: Node | Sun | null = null;
   private tipKey = "";
@@ -1348,7 +1354,14 @@ export class Scene implements SceneApi {
     this.drawHl(k, calm);
     this.stepParts(dt);
     this.placeLabels(k);
-    if (this.mouse) { const h = this.pickAt(this.mouse.x, this.mouse.y); if (h !== this.hover) this.setHover(h); }
+    // While the camera flies, bodies and cards slide under a still pointer: no hover until it lands.
+    if (this.flight || this.camTo) { if (this.hover) this.setHover(null); }
+    else if (this.mouse) {
+      // Heading for the card across other bodies: hold the hover (within the grace) instead of switching.
+      const h = this.towardTip(this.mouse.x, this.mouse.y) ? null : this.pickAt(this.mouse.x, this.mouse.y);
+      if (h) { if (h !== this.hover) this.setHover(h); this.hoverOff = 0; } else this.loseHover();
+    }
+    if (this.hoverOff && performance.now() >= this.hoverOff) this.setHover(null);
     if (this.tipFor) this.placeTip();
     if (this.app) this.app.ticker.maxFPS = this.fxBusy > 0 || this.parts.length || this.camTo || this.filters.size || hl ? 60 : 30;
   }
@@ -1633,11 +1646,22 @@ export class Scene implements SceneApi {
   }
   private setHover(n: Node | Sun | null) {
     this.hover = n;
+    this.hoverOff = 0;
     this.showTip();
+  }
+  /** The pointer left the hovered body: close its card after a short grace, unless it reaches the card. */
+  private towardTip(mx: number, my: number): boolean {
+    const b = this.tipBox;
+    if (!b || !this.hover || this.tipFor !== this.hover) return false;
+    return mx >= b.x && mx <= b.x + b.w && my >= b.gapTop && my <= b.gapBottom;
+  }
+  private loseHover() {
+    if (this.hover && !this.hoverOff) this.hoverOff = performance.now() + HOVER_GRACE_MS;
   }
   closeTip(): void {
     this.selected = null;
     this.hover = null;
+    this.hoverOff = 0;
     this.showTip();
   }
   private showTip() {
@@ -1680,7 +1704,9 @@ export class Scene implements SceneApi {
       const tw = el.offsetWidth || 220, th = el.offsetHeight || 70;
       const x = clamp(p.x - tw / 2, 8, Math.max(8, this.W - tw - 8));
       let y = p.y - r - 14 - th;
-      if (y < 8) y = p.y + r + 14;
+      const above = y >= 8;
+      if (!above) y = p.y + r + 14;
+      this.tipBox = { x, y, w: tw, h: th, gapTop: above ? y + th : p.y + r, gapBottom: above ? p.y - r : y };
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     }
     if (!this.hit.hidden) {
@@ -1700,7 +1726,8 @@ export class Scene implements SceneApi {
   /* ----- input: d3-zoom for pan / pinch / wheel ----- */
   private bindInput() {
     const root = this.o.root;
-    const blocked = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome], .lab, .hit, button, a");
+    const blocked = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome], .lab, .hit, .tip, button, a");
+    const inTip = (t: EventTarget | null) => t instanceof Node && !!this.tipEl?.contains(t);
     const inChrome = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-chrome]");
     // Pinch on a trackpad arrives as ctrl+wheel. d3-zoom skips preventDefault when its filter says no
     // or the zoom is already at a limit, and then the browser zooms the whole page and blurs the text.
@@ -1730,7 +1757,9 @@ export class Scene implements SceneApi {
     const local = (e: PointerEvent) => { const r = root.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
-      if (blocked(e.target) && e.target !== this.hit) { this.mouse = null; if (this.hover) this.setHover(null); return; }
+      // On the card itself: keep it open so its link can be clicked.
+      if (inTip(e.target)) { this.mouse = null; this.hoverOff = 0; return; }
+      if (blocked(e.target) && e.target !== this.hit) { this.mouse = null; this.loseHover(); return; }
       this.mouse = local(e);
     };
     const onLeave = () => { this.mouse = null; if (this.hover) this.setHover(null); };
