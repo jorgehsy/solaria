@@ -6,6 +6,8 @@ import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
 import "./styles.css";
 import { App } from "./App.tsx";
+import { startFaviconAnimation } from "./ui/favicon.ts";
 
 const el = document.getElementById("root");
 if (el) createRoot(el).render(<StrictMode><App /></StrictMode>);
+startFaviconAnimation();
