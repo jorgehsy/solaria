@@ -1546,7 +1546,7 @@ export class Scene implements SceneApi {
       G.label.style.opacity = under ? "0" : String(Math.min(1, this.introA * 1.4) * (!hl || hl.gals.has(G) ? 1 : 1 - 0.65 * hlA));
       if (!under) boxes.push(gb);
     }
-    this.placeNotes(boxes);
+    this.placeNotes(boxes, k);
     // Suns are obstacles too: a title never covers another Sun.
     const discs = [...this.suns.values()].filter((s) => !s.dying && s.ap > 0.3).map((s) => {
       const p = this.toScreen(s.x, s.y), r = s.r * sunK(k) + 6;
@@ -1634,25 +1634,42 @@ export class Scene implements SceneApi {
     e.fade += (to - e.fade) * (calm ? 1 : Math.min(1, dt * 2));
     return e.fade;
   }
-  /** Ghost cards sit on their Galaxy; the rest, and the quiet line, sit just under it. */
-  private placeNotes(boxes: { x0: number; x1: number; y0: number; y1: number }[]) {
+  /**
+   * Ghost cards sit on their Galaxy; the rest, and the quiet line, sit just under it.
+   * A note shows only where it can be read without covering anything: its Galaxy is on screen
+   * (no pinning to the edge), a Horizon Galaxy has been flown close (vis) unless it failed, and it hits no chrome,
+   * label or earlier note. Focus notes are placed first, so they win a clash.
+   */
+  private placeNotes(boxes: { x0: number; x1: number; y0: number; y1: number }[], k: number) {
     const { W, H } = this;
     const a = String(Math.min(1, this.introA * 1.4));
-    for (const [repo, e] of this.noteEls) {
+    const hits = (b: { x0: number; x1: number; y0: number; y1: number }) =>
+      boxes.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
+    const order = [...this.noteEls].sort(([ra], [rb]) => (this.galaxies.get(ra)?.tier === "horizon" ? 1 : 0) - (this.galaxies.get(rb)?.tier === "horizon" ? 1 : 0));
+    for (const [repo, e] of order) {
       const G = this.galaxies.get(repo);
       if (!G) continue;
       const ghost = this.notes.get(repo)?.look === "ghost";
+      const c = this.toScreen(G.x, G.y);
+      // An error (ghost) is worth showing from afar; "No Maps yet" and the quiet line wait.
+      const near = ghost || this.vis(G, k) > 0.5;
+      const onScreen = c.x >= 0 && c.x <= W && c.y >= 0 && c.y <= H;
       let below = this.toScreen(G.x, G.y + G.R * 0.9).y + 8;
       for (const el of [e.card, e.quiet]) {
         if (!el) continue;
         const w = el.offsetWidth || 200, h = el.offsetHeight || 40;
-        const c = this.toScreen(G.x, G.y);
+        // A Horizon Galaxy is too small to hold a card: its ghost card goes under it too.
+        const onG = el === e.card && ghost && G.tier !== "horizon";
         const x = clamp(c.x - w / 2, 8, Math.max(8, W - w - 8));
-        const y = el === e.card && ghost ? clamp(c.y - h / 2, 8, Math.max(8, H - h - 8)) : clamp(below, 8, Math.max(8, H - h - 8));
-        if (!(el === e.card && ghost)) below = y + h + 6;
+        const y = onG ? c.y - h / 2 : below;
+        const box = { x0: x, x1: x + w, y0: y, y1: y + h };
+        const show = onScreen && near && y >= 8 && y + h <= H - 8 && !hits(box);
         el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-        el.style.opacity = a;
-        boxes.push({ x0: x, x1: x + w, y0: y, y1: y + h });
+        el.classList.toggle("off", !show);
+        el.style.opacity = show ? a : "";
+        if (!show) continue;
+        if (!onG) below = y + h + 6;
+        boxes.push(box);
       }
     }
   }
