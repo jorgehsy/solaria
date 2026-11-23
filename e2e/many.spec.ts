@@ -69,3 +69,36 @@ test("Focus is recomputed from each snapshot", async ({ page }) => {
   await expect(page.locator(`.lab-hz[title='${repo}']`)).toHaveCount(0);
   await expect(page.locator(".lab-hz")).toHaveCount(27);
 });
+
+test("Galaxy notes never stack: Horizon notes wait until flown close, visible notes never overlap", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".lab-hz")).toHaveCount(27);
+  await page.waitForTimeout(2500);
+  const notes = await page.locator(".lab-note, .lab-quiet").evaluateAll((els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { repo: e.getAttribute("data-repo") ?? "", on: getComputedStyle(e).visibility !== "hidden", x0: r.left, x1: r.right, y0: r.top, y1: r.bottom };
+    }),
+  );
+  const hz = new Set(await page.locator(".lab-hz").evaluateAll((els) => els.map((e) => e.getAttribute("title"))));
+  expect(notes.length).toBeGreaterThan(10);
+  const shown = notes.filter((n) => n.on);
+  expect(shown.length).toBeGreaterThan(0);
+  for (const n of shown) {
+    expect(hz.has(n.repo), `${n.repo} is on the Horizon`).toBe(false);
+    expect(n.y1, n.repo).toBeLessThanOrEqual(900);
+  }
+  for (let i = 0; i < shown.length; i++)
+    for (let j = i + 1; j < shown.length; j++) {
+      const a = shown[i]!, b = shown[j]!;
+      expect(a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0, `${a.repo} overlaps ${b.repo}`).toBe(false);
+    }
+
+  // Flying to a Horizon Galaxy brings its note back.
+  const first = page.locator(".lab-hz").first();
+  const name = (await first.getAttribute("title")) ?? "";
+  await first.click();
+  await page.waitForTimeout(1500);
+  const el = page.locator(`.lab-note[data-repo="${name}"], .lab-quiet[data-repo="${name}"]`).first();
+  await expect(el).toBeVisible();
+});
