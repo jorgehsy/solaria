@@ -50,6 +50,17 @@ describe("fetchRepo", () => {
     expect(r.ok && r.reply.closedPrs?.map((p) => p.number)).toEqual([4]);
   });
 
+  it("drops null nodes GitHub returns for items the token cannot see", async () => {
+    const body = page([1], null);
+    const issue = body.data.repository.issues.nodes[0] as Record<string, unknown>;
+    issue.blockedBy = { nodes: [null, { number: 9, state: "OPEN", repository: { nameWithOwner: "acme/web" } }] };
+    issue.assignees = { nodes: [null, { login: "alice" }] };
+    const r = await fetchRepo("acme/web", "tok", { fetch: fake({ status: 200, body }) });
+    const got = r.ok ? r.reply.issues[0] : undefined;
+    expect(got?.blockedBy?.nodes.map((b) => b.number)).toEqual([9]);
+    expect(got?.assignees.nodes.map((a) => a.login)).toEqual(["alice"]);
+  });
+
   it("maps 401 to bad_token", async () => {
     expect(await fetchRepo("acme/web", "t", { fetch: fake({ status: 401 }) })).toMatchObject({ ok: false, code: "bad_token" });
   });

@@ -62,7 +62,7 @@ export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: st
     if (res.status !== 200) return { ok: false, code: "network", message: `Unexpected answer ${res.status}`, rate };
     let body: { data?: GqlRepoPage | null; errors?: { type?: string; message?: string }[] };
     try {
-      body = (await res.json()) as typeof body;
+      body = dropNullNodes(await res.json()) as typeof body;
     } catch (e) {
       return { ok: false, code: "network", message: `Bad JSON from GitHub: ${(e as Error).message}`, rate };
     }
@@ -88,6 +88,21 @@ export async function fetchRepo(repo: string, token: string, opts: { apiUrl?: st
     after = r.issues.pageInfo.endCursor;
   }
   return { ok: true, reply: { nameWithOwner, issues, prs, closedPrs }, rate };
+}
+
+/**
+ * GitHub puts `null` in a `nodes` list for an item the token cannot see (for example a
+ * blocker in a repo outside the token, or a deleted issue). Drop those so nothing downstream
+ * has to expect them.
+ */
+export function dropNullNodes(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(dropNullNodes);
+  if (!v || typeof v !== "object") return v;
+  const out: Record<string, unknown> = {};
+  for (const [k, x] of Object.entries(v)) {
+    out[k] = k === "nodes" && Array.isArray(x) ? x.filter((n) => n != null).map(dropNullNodes) : dropNullNodes(x);
+  }
+  return out;
 }
 
 export function graphqlUrl(apiUrl: string): string {
