@@ -39,7 +39,6 @@ class FakeScene implements SceneApi {
   refresh(view: View, opts: { first: boolean; ev?: UniverseEvent }) { this.refreshes.push({ view, ...opts }); }
   fx(ev: UniverseEvent, done: () => void) { this.played.push(ev); done(); }
   touring() { return this.tour; }
-  needsTravel(_t: Targets) { return true; }
   travelForEvent(_t: Targets, done: () => void) { this.pendingTravel = done; }
 }
 

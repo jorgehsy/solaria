@@ -39,7 +39,6 @@ export interface SceneApi {
   /** Play the animation; call `done` when it has landed so held state can be dropped. */
   fx(ev: UniverseEvent, done: () => void): void;
   touring(): boolean;
-  needsTravel(t: Targets): boolean;
   travelForEvent(t: Targets, done: () => void): void;
 }
 
@@ -190,8 +189,8 @@ export class Controller {
     if (!ev) return;
     this.nextAt = now + QUEUE_GAP;
     const t = this.targetsOf(ev);
-    // On the Auto tour, the camera first travels to an event that is off screen or too small.
-    if (this.scene?.touring() && this.scene.needsTravel(t)) {
+    // On the Auto tour, the camera first frames every event and rests on it before it plays.
+    if (this.scene?.touring()) {
       this.holding = true;
       this.travelling = ev;
       this.scene.travelForEvent(t, () => {

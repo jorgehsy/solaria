@@ -118,7 +118,13 @@ export function App() {
   const highlight = useCallback((t: Targets | null) => sceneRef.current?.highlight(t), []);
   const go = useCallback((t: Targets) => sceneRef.current?.travel(t, 800), []);
   const seen = useCallback((id: string) => controller.markLogSeen(id), []);
-  const demo = useCallback((k: DemoEventKind) => controller.demo(k), []);
+  const tourOnRef = useRef(tourOn);
+  useEffect(() => { tourOnRef.current = tourOn; }, [tourOn]);
+  // With the Auto tour on, a demo event starts the tour at once so the camera frames it.
+  const demo = useCallback((k: DemoEventKind) => {
+    if (tourOnRef.current) sceneRef.current?.tourStart();
+    controller.demo(k);
+  }, []);
 
   const setTour = useCallback((on: boolean) => {
     setTourOn(on);
@@ -129,8 +135,14 @@ export function App() {
 
   // Any input stops the tour on the spot; 2 minutes of quiet starts it.
   useEffect(() => {
-    const onInput = () => { lastInput.current = performance.now(); sceneRef.current?.tourStop(); };
-    const onMove = (e: PointerEvent) => { if (e.pointerType !== "touch" && (e.movementX || e.movementY)) onInput(); };
+    // Input in the demo panel does not count: its buttons are how the demo shows events on the tour.
+    const inDemo = (e: Event) => e.target instanceof Element && !!e.target.closest("#demo");
+    const onInput = (e: Event) => {
+      if (inDemo(e)) return;
+      lastInput.current = performance.now();
+      sceneRef.current?.tourStop();
+    };
+    const onMove = (e: PointerEvent) => { if (e.pointerType !== "touch" && (e.movementX || e.movementY)) onInput(e); };
     const opts = { capture: true, passive: true } as const;
     lastInput.current = performance.now();
     for (const t of ["pointerdown", "wheel", "keydown", "touchstart"]) window.addEventListener(t, onInput, opts);
