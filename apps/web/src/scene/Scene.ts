@@ -760,12 +760,13 @@ export class Scene implements SceneApi {
     if (this.tour) this.tourStop();
     this.flyTo(this.frameTargets(t), ms);
   }
-  needsTravel(t: Targets): boolean {
-    const b = this.boxOf(t);
-    if (!b) return false;
-    const a = this.toScreen(b.x0, b.y0), c = this.toScreen(b.x1, b.y1);
-    const inside = a.x >= 0 && a.y >= 60 && c.x <= this.W && c.y <= this.H - 60;
-    return !inside || this.cam.k * b.s < 0.45;
+  /** The camera already shows `to` closely enough that flying there would only be a jolt. */
+  private closeTo(to: Cam): boolean {
+    const { W, H, cam } = this;
+    // Where the target's view centre sits on screen now, against the screen centre.
+    const wx = (W / 2 - to.x) / to.k, wy = (H / 2 - to.y) / to.k;
+    const d = Math.hypot(wx * cam.k + cam.x - W / 2, wy * cam.k + cam.y - H / 2);
+    return Math.abs(Math.log(to.k / cam.k)) < 0.15 && d < 0.06 * Math.min(W, H);
   }
   touring(): boolean {
     return !!this.tour;
@@ -802,7 +803,8 @@ export class Scene implements SceneApi {
     });
   }
   /**
-   * Auto tour: fly to where an event will happen, hold EVENT_HOLD_MS so the eye lands, then let it play.
+   * Auto tour, every event: fly to where it will happen (unless already framed), hold EVENT_HOLD_MS so
+   * the eye lands, then let it play.
    * `done` is called exactly once, also when input or another flight cuts the travel short.
    */
   travelForEvent(t: Targets, done: () => void): void {
@@ -817,13 +819,17 @@ export class Scene implements SceneApi {
       if (this.evTravel === finish) this.evTravel = null;
       done();
     };
-    this.flyTo(this.frameTargets(t), 900, "power2.inOut", () => {
+    const rest = () => {
       if (fired) return;
       hold = setTimeout(() => {
         finish();
         if (me && this.tour === me) me.timer = setTimeout(() => { if (this.tour === me) this.tourNext(); }, 7000);
       }, EVENT_HOLD_MS);
-    });
+    };
+    const to = this.frameTargets(t);
+    // Already framed: no flight, only the hold (the tour's drift stops so the camera rests).
+    if (to && this.closeTo(to)) { this.stopFlight(); rest(); }
+    else this.flyTo(to, 900, "power2.inOut", rest);
     // Set after flyTo: its own stopFlight must not end this travel, only an older one.
     if (!fired) this.evTravel = finish;
   }
