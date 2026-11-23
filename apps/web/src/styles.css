@@ -230,8 +230,7 @@ h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.1; font-weight: 500; lette
   pointer-events: none; opacity: 0; visibility: hidden;
   transition: opacity 125ms var(--ease-out), visibility 0s linear 125ms;
 }
-.tip.on { opacity: 1; visibility: visible; transition: opacity 125ms var(--ease-out); }
-.tip.touch { pointer-events: auto; cursor: default; }
+.tip.on { opacity: 1; visibility: visible; transition: opacity 125ms var(--ease-out); pointer-events: auto; cursor: default; }
 .tip-ref { font-size: 12px; line-height: 1.4; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .tip-ref b { font-weight: 600; color: var(--ink); }
 .tip-title { font-size: 14px; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; }

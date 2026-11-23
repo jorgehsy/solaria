@@ -29,7 +29,7 @@ export const Tooltip = forwardRef<HTMLDivElement, { tip: TipInfo | null }>(funct
                 {tip.external && <span className="tip-tag">{S.tip.external}</span>}
               </span>
             )}
-            {tip.touch && <a href={tip.url} target="_blank" rel="noopener">{S.tip.openOnGithub}</a>}
+            <a href={tip.url} target="_blank" rel="noopener">{S.tip.openOnGithub}</a>
           </span>
         </>
       )}
