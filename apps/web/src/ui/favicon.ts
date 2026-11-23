@@ -60,7 +60,8 @@ export function startFaviconAnimation(): () => void {
   link.type = "image/png";
   const tick = () => {
     const i = Math.floor(((Date.now() % PERIOD_MS) / PERIOD_MS) * FRAMES);
-    link.href = frames[i] ?? frames[0]!;
+    const frame = frames[i];
+    if (frame) link.href = frame;
   };
   tick();
   const t = setInterval(tick, PERIOD_MS / FRAMES);
