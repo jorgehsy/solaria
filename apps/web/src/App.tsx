@@ -15,7 +15,7 @@ import { Search } from "./ui/Search.tsx";
 import { Tooltip } from "./ui/Tooltip.tsx";
 import { Card } from "./ui/Card.tsx";
 import { galaxyNotes, universeCard } from "./ui/galaxyNotes.ts";
-import { IconCollapse, IconDemo, IconExpand, IconFit, IconSearch, IconTour } from "./ui/icons.tsx";
+import { IconCards, IconCollapse, IconDemo, IconExpand, IconFit, IconSearch, IconTour } from "./ui/icons.tsx";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const still = () => reduceMotion.matches;
@@ -33,6 +33,13 @@ function readTour(): boolean {
   return !still();
 }
 
+/** Cards toggle: note cards at each Galaxy, the hover card and the dim/ghost look; on by default. On first load they wait 4 s. Remembered in localStorage. */
+const CARDS_KEY = "solaria.cards";
+const CARDS_DELAY_MS = 4000;
+function readCards(): boolean {
+  try { return localStorage.getItem(CARDS_KEY) !== "0"; } catch { return true; }
+}
+
 export function App() {
   const state = useSyncExternalStore(controller.subscribe, controller.getState);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -46,6 +53,11 @@ export function App() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tourOn, setTourOn] = useState(readTour);
+  const [cardsOn, setCardsOn] = useState(readCards);
+  const [cardsReady, setCardsReady] = useState(false);
+  /** What the Scene should do with note cards right now (read again when the Scene starts). */
+  const cardsShown = useRef(false);
+  const cardsOnRef = useRef(cardsOn);
   const [fs, setFs] = useState<null | "api" | "css">(null);
   const lastInput = useRef(0);
   const searchBtn = useRef<HTMLButtonElement>(null);
@@ -73,6 +85,8 @@ export function App() {
       if (r === "ok") {
         sceneRef.current = scene;
         scene.setTipElement(tipRef.current);
+        scene.setNotesShown(cardsShown.current);
+        scene.setCardsOn(cardsOnRef.current);
         controller.attachScene(scene);
       } else {
         setNotice({ title: S.err.webgl.title, text: r === "nowebgl" ? S.err.webgl.text : S.err.webgl.initFailed });
@@ -114,6 +128,22 @@ export function App() {
     for (const m of Object.values(u.maps)) { const c = counts[m.repo]; if (c) c.maps++; }
     sceneRef.current?.setNotes(galaxyNotes({ mode: state.mode, status: state.status, repos: state.repos, counts, now }));
   }, [state, now]);
+
+  // First load: cards wait a few seconds so the map is seen clean first.
+  useEffect(() => {
+    const t = setTimeout(() => setCardsReady(true), CARDS_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    cardsShown.current = cardsOn && cardsReady;
+    cardsOnRef.current = cardsOn;
+    sceneRef.current?.setNotesShown(cardsShown.current);
+    sceneRef.current?.setCardsOn(cardsOn);
+  }, [cardsOn, cardsReady]);
+  const setCards = useCallback((on: boolean) => {
+    setCardsOn(on);
+    try { localStorage.setItem(CARDS_KEY, on ? "1" : "0"); } catch { /* storage blocked */ }
+  }, []);
 
   const highlight = useCallback((t: Targets | null) => sceneRef.current?.highlight(t), []);
   const go = useCallback((t: Targets) => sceneRef.current?.travel(t, 800), []);
@@ -191,7 +221,7 @@ export function App() {
     flashTimer.current = setTimeout(() => s.highlight(null), still() ? 2000 : 2800);
   }, []);
 
-  // Keyboard: / search, P tour, D demo, 0 recenter, F full screen, arrows pan, +/- zoom.
+  // Keyboard: / search, P tour, C cards, D demo, 0 recenter, F full screen, arrows pan, +/- zoom.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -199,6 +229,7 @@ export function App() {
       const k = e.key, s = sceneRef.current;
       if (k === "/") { setSearchOpen(true); e.preventDefault(); return; }
       if (k === "p" || k === "P") { setTour(!tourOn); e.preventDefault(); return; }
+      if (k === "c" || k === "C") { setCards(!cardsOn); e.preventDefault(); return; }
       if (k === "d" || k === "D") { setDemoOpen((o) => !o); e.preventDefault(); return; }
       if (k === "Escape") {
         if (fs === "css") { setFs(null); e.preventDefault(); return; }
@@ -221,9 +252,10 @@ export function App() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [tourOn, demoOpen, fs, setTour, toggleFs]);
+  }, [tourOn, cardsOn, demoOpen, fs, setTour, setCards, toggleFs]);
 
   const cls = ["u", fs ? "is-clean" : "", demoOpen ? "demo-open" : ""].filter(Boolean).join(" ");
+  const cardsLabel = cardsOn ? S.tool.cardsOn : S.tool.cardsOff;
   const tourLabel = tourOn ? S.tool.tourOn : S.tool.tourOff;
   const fsLabel = fs ? S.tool.fullscreenExit : S.tool.fullscreenEnter;
   return (
@@ -235,6 +267,7 @@ export function App() {
       <div className="tools" data-chrome>
         <button ref={searchBtn} className="tool" type="button" aria-label={S.tool.search} title={S.tool.search} aria-expanded={searchOpen} aria-controls="search" onClick={() => setSearchOpen((o) => !o)}><IconSearch /></button>
         <button className="tool" type="button" aria-pressed={tourOn} aria-label={tourLabel} title={tourLabel} onClick={() => setTour(!tourOn)}><IconTour /></button>
+        <button className="tool" type="button" aria-pressed={cardsOn} aria-label={cardsLabel} title={cardsLabel} onClick={() => setCards(!cardsOn)}><IconCards /></button>
         <button ref={demoBtn} className="tool" type="button" aria-label={S.tool.demo} title={S.tool.demo} aria-expanded={demoOpen} aria-controls="demo" onClick={() => setDemoOpen((o) => !o)}><IconDemo /></button>
         <button className="tool" type="button" aria-label={S.tool.recenter} title={S.tool.recenter} onClick={() => sceneRef.current?.recenter()}><IconFit /></button>
         <button className="tool tool-fs" type="button" aria-label={fsLabel} title={fsLabel} onClick={toggleFs}>{fs ? <IconCollapse /> : <IconExpand />}</button>

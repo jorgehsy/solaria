@@ -105,6 +105,8 @@ export const S = {
     search: "Search (key /)",
     tourOn: "Auto tour: on (key P)",
     tourOff: "Auto tour: off (key P)",
+    cardsOn: "Cards: shown (key C)",
+    cardsOff: "Cards: hidden (key C)",
     demo: "Demo mode (key D)",
     recenter: "Recenter (key 0)",
     fullscreenEnter: "Full screen (key F)",

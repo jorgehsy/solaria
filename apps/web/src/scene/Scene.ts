@@ -190,6 +190,10 @@ export class Scene implements SceneApi {
   /* Error and empty states (spec section 9): per repo look, card and quiet line. */
   private notes = new Map<string, GalaxyNote>();
   private noteEls = new Map<string, { fade: number; card: HTMLDivElement | null; quiet: HTMLDivElement | null }>();
+  /** Note cards and quiet lines on screen: the cards toggle, after the first-load wait. Hidden until the App says so. */
+  private notesShown = false;
+  /** The cards toggle itself: off also drops the hover card and the dim/ghost look, for a clean map. */
+  private cardsOn = true;
   private readonly o: SceneOptions;
 
   constructor(o: SceneOptions) {
@@ -1387,8 +1391,11 @@ export class Scene implements SceneApi {
     if (this.flight || this.camTo) { if (this.hover) this.setHover(null); }
     else if (this.mouse) {
       // Heading for the card across other bodies: hold the hover (within the grace) instead of switching.
-      const h = this.towardTip(this.mouse.x, this.mouse.y) ? null : this.pickAt(this.mouse.x, this.mouse.y);
-      if (h) { if (h !== this.hover) this.setHover(h); this.hoverOff = 0; } else this.loseHover();
+      if (this.towardTip(this.mouse.x, this.mouse.y)) this.hoverOff = 0;
+      else {
+        const h = this.pickAt(this.mouse.x, this.mouse.y);
+        if (h) { if (h !== this.hover) this.setHover(h); this.hoverOff = 0; } else this.loseHover();
+      }
     }
     if (this.hoverOff && performance.now() >= this.hoverOff) this.setHover(null);
     if (this.tipFor) this.placeTip();
@@ -1587,7 +1594,22 @@ export class Scene implements SceneApi {
   /** Per repo look, small card and quiet line, from the App (spec section 9). */
   setNotes(notes: ReadonlyMap<string, GalaxyNote>): void {
     this.notes = new Map(notes);
-    if (this.ok) { this.syncNotes(); this.layout(); }
+    // Place the notes now, not on the next frame: a changed card never sits a frame where it does not fit.
+    if (this.ok) { this.syncNotes(); this.layout(); this.placeLabels(this.cam.k); }
+  }
+  /** Show or hide every note card and quiet line. */
+  setNotesShown(on: boolean): void {
+    this.notesShown = on;
+    if (this.ok) this.placeLabels(this.cam.k);
+  }
+  /** The cards toggle: off hides the hover card and draws failing Galaxies without the dim/ghost look. */
+  setCardsOn(on: boolean): void {
+    if (on === this.cardsOn) return;
+    this.cardsOn = on;
+    if (this.ok) { this.syncNotes(); this.showTip(); }
+  }
+  private lookOf(repo: string): GalaxyNote | undefined {
+    return this.cardsOn ? this.notes.get(repo) : undefined;
   }
   private syncNotes() {
     for (const [repo, e] of this.noteEls) {
@@ -1598,8 +1620,8 @@ export class Scene implements SceneApi {
     for (const [repo, G] of this.galaxies) {
       const n = this.notes.get(repo);
       let e = this.noteEls.get(repo);
-      if (!e) { e = { fade: lookFade(n), card: null, quiet: null }; this.noteEls.set(repo, e); }
-      G.label.dataset.look = n?.look ?? "normal";
+      if (!e) { e = { fade: lookFade(this.lookOf(repo)), card: null, quiet: null }; this.noteEls.set(repo, e); }
+      G.label.dataset.look = this.lookOf(repo)?.look ?? "normal";
       const html = n?.card ? noteHtml(n.card) : "";
       if (html && !e.card) {
         e.card = document.createElement("div");
@@ -1627,7 +1649,7 @@ export class Scene implements SceneApi {
   private fadeStep(repo: string, dt: number, calm: boolean): number {
     const e = this.noteEls.get(repo);
     if (!e) return 1;
-    const to = lookFade(this.notes.get(repo));
+    const to = lookFade(this.lookOf(repo));
     e.fade += (to - e.fade) * (calm ? 1 : Math.min(1, dt * 2));
     return e.fade;
   }
@@ -1659,7 +1681,7 @@ export class Scene implements SceneApi {
         const x = clamp(c.x - w / 2, 8, Math.max(8, W - w - 8));
         const y = onG ? c.y - h / 2 : below;
         const box = { x0: x, x1: x + w, y0: y, y1: y + h };
-        const show = onScreen && near && y >= 8 && y + h <= H - 8 && !hits(box);
+        const show = this.notesShown && onScreen && near && y >= 8 && y + h <= H - 8 && !hits(box);
         el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
         el.classList.toggle("off", !show);
         el.style.opacity = show ? a : "";
@@ -1711,7 +1733,7 @@ export class Scene implements SceneApi {
     this.showTip();
   }
   private showTip() {
-    const n = this.hover ?? this.selected;
+    const n = this.cardsOn ? this.hover ?? this.selected : null;
     if (!n) {
       this.tipFor = null;
       this.tipKey = "";
@@ -1752,7 +1774,7 @@ export class Scene implements SceneApi {
       let y = p.y - r - 14 - th;
       const above = y >= 8;
       if (!above) y = p.y + r + 14;
-      this.tipBox = { x, y, w: tw, h: th, gapTop: above ? y + th : p.y + r, gapBottom: above ? p.y - r : y };
+      this.tipBox = { x, y, w: tw, h: th, gapTop: above ? y + th : p.y - r, gapBottom: above ? p.y + r : y };
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     }
     if (!this.hit.hidden) {

@@ -92,23 +92,26 @@ test("Focus is recomputed from each snapshot", async ({ page }) => {
 test("Galaxy notes never stack: visible notes stay on screen and never overlap", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(HZ)).toHaveCount(27);
-  await page.waitForTimeout(2500);
-  const notes = await page.locator(".lab-note, .lab-quiet").evaluateAll((els) =>
-    els.map((e) => {
-      const r = e.getBoundingClientRect();
-      return { repo: e.getAttribute("data-repo") ?? "", on: getComputedStyle(e).visibility !== "hidden", x0: r.left, x1: r.right, y0: r.top, y1: r.bottom };
-    }),
-  );
-  expect(notes.length).toBeGreaterThan(10);
-  const shown = notes.filter((n) => n.on);
-  expect(shown.length).toBeGreaterThan(0);
-  for (const n of shown) {
-    expect(n.y0, n.repo).toBeGreaterThanOrEqual(0);
-    expect(n.y1, n.repo).toBeLessThanOrEqual(900);
-  }
-  for (let i = 0; i < shown.length; i++)
-    for (let j = i + 1; j < shown.length; j++) {
-      const a = shown[i]!, b = shown[j]!;
-      expect(a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0, `${a.repo} overlaps ${b.repo}`).toBe(false);
+  // Cards wait 4 s on first load. The Universe is still settling (new issues arrive as Rifts), so check until it holds.
+  await page.waitForTimeout(4500);
+  await expect(async () => {
+    const notes = await page.locator(".lab-note, .lab-quiet").evaluateAll((els) =>
+      els.map((e) => {
+        const r = e.getBoundingClientRect();
+        return { repo: e.getAttribute("data-repo") ?? "", on: getComputedStyle(e).visibility !== "hidden", x0: r.left, x1: r.right, y0: r.top, y1: r.bottom };
+      }),
+    );
+    expect(notes.length).toBeGreaterThan(10);
+    const shown = notes.filter((n) => n.on);
+    expect(shown.length).toBeGreaterThan(0);
+    for (const n of shown) {
+      expect(n.y0, n.repo).toBeGreaterThanOrEqual(0);
+      expect(n.y1, n.repo).toBeLessThanOrEqual(900);
     }
+    for (let i = 0; i < shown.length; i++)
+      for (let j = i + 1; j < shown.length; j++) {
+        const a = shown[i]!, b = shown[j]!;
+        expect(a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0, `${a.repo} overlaps ${b.repo}`).toBe(false);
+      }
+  }).toPass({ timeout: 5000 });
 });

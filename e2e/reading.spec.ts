@@ -53,4 +53,16 @@ test("draws the Sun with its Planets' states and a Satellite", async ({ page }) 
     }
     await page.mouse.move(5, 5);
   }
+  // The cards toggle off hides the hover card too.
+  await page.getByRole("button", { name: /^Cards:/ }).click();
+  await page.mouse.move(720, 450);
+  await page.mouse.move(721, 451);
+  await page.waitForTimeout(400);
+  await expect(page.locator(".tip.on")).toHaveCount(0);
+  await page.getByRole("button", { name: /^Cards:/ }).click();
+  await expect(async () => {
+    await page.mouse.move(720, 450);
+    await page.mouse.move(721, 451);
+    await expect(page.locator(".tip")).toContainText("acme/maps #6", { timeout: 500 });
+  }).toPass({ timeout: 8000 });
 });
