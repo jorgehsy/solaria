@@ -90,7 +90,7 @@ test("rejected token: no Galaxies, one centred card with the .env line", async (
   await expect(page.locator(".lab-gal")).toHaveCount(0);
 });
 
-test("cards toggle: cards wait 4 s on first load, hide on click and stay hidden after reload", async ({ page }) => {
+test("cards toggle: cards wait 4 s on first load; off hides cards and the ghost look, and stays off after reload", async ({ page }) => {
   await page.goto("/");
   const card = note(page, "errs/lib");
   await expect(card).toContainText("No access");
@@ -102,6 +102,8 @@ test("cards toggle: cards wait 4 s on first load, hide on click and stay hidden 
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator(".lab-note:visible, .lab-quiet:visible")).toHaveCount(0);
+  // Off also drops the ghost/dim look.
+  await expect(page.locator('.lab-gal[data-look="ghost"]')).toHaveCount(0);
 
   await page.reload();
   await expect(note(page, "errs/lib")).toContainText("No access");
@@ -111,4 +113,5 @@ test("cards toggle: cards wait 4 s on first load, hide on click and stay hidden 
 
   await page.keyboard.press("c");
   await expect(note(page, "errs/lib")).toBeVisible();
+  await expect(page.locator('.lab-gal[data-look="ghost"]')).toHaveCount(2);
 });

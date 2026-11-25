@@ -33,7 +33,7 @@ function readTour(): boolean {
   return !still();
 }
 
-/** Cards toggle: note cards at each Galaxy, on by default. On first load they wait 4 s. Remembered in localStorage. */
+/** Cards toggle: note cards at each Galaxy, the hover card and the dim/ghost look; on by default. On first load they wait 4 s. Remembered in localStorage. */
 const CARDS_KEY = "solaria.cards";
 const CARDS_DELAY_MS = 4000;
 function readCards(): boolean {
@@ -57,6 +57,7 @@ export function App() {
   const [cardsReady, setCardsReady] = useState(false);
   /** What the Scene should do with note cards right now (read again when the Scene starts). */
   const cardsShown = useRef(false);
+  const cardsOnRef = useRef(cardsOn);
   const [fs, setFs] = useState<null | "api" | "css">(null);
   const lastInput = useRef(0);
   const searchBtn = useRef<HTMLButtonElement>(null);
@@ -85,6 +86,7 @@ export function App() {
         sceneRef.current = scene;
         scene.setTipElement(tipRef.current);
         scene.setNotesShown(cardsShown.current);
+        scene.setCardsOn(cardsOnRef.current);
         controller.attachScene(scene);
       } else {
         setNotice({ title: S.err.webgl.title, text: r === "nowebgl" ? S.err.webgl.text : S.err.webgl.initFailed });
@@ -134,7 +136,9 @@ export function App() {
   }, []);
   useEffect(() => {
     cardsShown.current = cardsOn && cardsReady;
+    cardsOnRef.current = cardsOn;
     sceneRef.current?.setNotesShown(cardsShown.current);
+    sceneRef.current?.setCardsOn(cardsOn);
   }, [cardsOn, cardsReady]);
   const setCards = useCallback((on: boolean) => {
     setCardsOn(on);

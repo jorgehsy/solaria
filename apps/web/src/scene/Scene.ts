@@ -190,8 +190,10 @@ export class Scene implements SceneApi {
   /* Error and empty states (spec section 9): per repo look, card and quiet line. */
   private notes = new Map<string, GalaxyNote>();
   private noteEls = new Map<string, { fade: number; card: HTMLDivElement | null; quiet: HTMLDivElement | null }>();
-  /** The cards toggle: off hides every note (card and quiet line) for a clean map. Hidden until the App says so. */
+  /** Note cards and quiet lines on screen: the cards toggle, after the first-load wait. Hidden until the App says so. */
   private notesShown = false;
+  /** The cards toggle itself: off also drops the hover card and the dim/ghost look, for a clean map. */
+  private cardsOn = true;
   private readonly o: SceneOptions;
 
   constructor(o: SceneOptions) {
@@ -1591,9 +1593,18 @@ export class Scene implements SceneApi {
     this.notes = new Map(notes);
     if (this.ok) { this.syncNotes(); this.layout(); }
   }
-  /** Show or hide every note card and quiet line. The Galaxy look (ghost, dim) stays. */
+  /** Show or hide every note card and quiet line. */
   setNotesShown(on: boolean): void {
     this.notesShown = on;
+  }
+  /** The cards toggle: off hides the hover card and draws failing Galaxies without the dim/ghost look. */
+  setCardsOn(on: boolean): void {
+    if (on === this.cardsOn) return;
+    this.cardsOn = on;
+    if (this.ok) { this.syncNotes(); this.showTip(); }
+  }
+  private lookOf(repo: string): GalaxyNote | undefined {
+    return this.cardsOn ? this.notes.get(repo) : undefined;
   }
   private syncNotes() {
     for (const [repo, e] of this.noteEls) {
@@ -1604,8 +1615,8 @@ export class Scene implements SceneApi {
     for (const [repo, G] of this.galaxies) {
       const n = this.notes.get(repo);
       let e = this.noteEls.get(repo);
-      if (!e) { e = { fade: lookFade(n), card: null, quiet: null }; this.noteEls.set(repo, e); }
-      G.label.dataset.look = n?.look ?? "normal";
+      if (!e) { e = { fade: lookFade(this.lookOf(repo)), card: null, quiet: null }; this.noteEls.set(repo, e); }
+      G.label.dataset.look = this.lookOf(repo)?.look ?? "normal";
       const html = n?.card ? noteHtml(n.card) : "";
       if (html && !e.card) {
         e.card = document.createElement("div");
@@ -1633,7 +1644,7 @@ export class Scene implements SceneApi {
   private fadeStep(repo: string, dt: number, calm: boolean): number {
     const e = this.noteEls.get(repo);
     if (!e) return 1;
-    const to = lookFade(this.notes.get(repo));
+    const to = lookFade(this.lookOf(repo));
     e.fade += (to - e.fade) * (calm ? 1 : Math.min(1, dt * 2));
     return e.fade;
   }
@@ -1717,7 +1728,7 @@ export class Scene implements SceneApi {
     this.showTip();
   }
   private showTip() {
-    const n = this.hover ?? this.selected;
+    const n = this.cardsOn ? this.hover ?? this.selected : null;
     if (!n) {
       this.tipFor = null;
       this.tipKey = "";
