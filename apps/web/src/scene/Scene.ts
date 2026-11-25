@@ -1391,8 +1391,11 @@ export class Scene implements SceneApi {
     if (this.flight || this.camTo) { if (this.hover) this.setHover(null); }
     else if (this.mouse) {
       // Heading for the card across other bodies: hold the hover (within the grace) instead of switching.
-      const h = this.towardTip(this.mouse.x, this.mouse.y) ? null : this.pickAt(this.mouse.x, this.mouse.y);
-      if (h) { if (h !== this.hover) this.setHover(h); this.hoverOff = 0; } else this.loseHover();
+      if (this.towardTip(this.mouse.x, this.mouse.y)) this.hoverOff = 0;
+      else {
+        const h = this.pickAt(this.mouse.x, this.mouse.y);
+        if (h) { if (h !== this.hover) this.setHover(h); this.hoverOff = 0; } else this.loseHover();
+      }
     }
     if (this.hoverOff && performance.now() >= this.hoverOff) this.setHover(null);
     if (this.tipFor) this.placeTip();
@@ -1591,11 +1594,13 @@ export class Scene implements SceneApi {
   /** Per repo look, small card and quiet line, from the App (spec section 9). */
   setNotes(notes: ReadonlyMap<string, GalaxyNote>): void {
     this.notes = new Map(notes);
-    if (this.ok) { this.syncNotes(); this.layout(); }
+    // Place the notes now, not on the next frame: a changed card never sits a frame where it does not fit.
+    if (this.ok) { this.syncNotes(); this.layout(); this.placeLabels(this.cam.k); }
   }
   /** Show or hide every note card and quiet line. */
   setNotesShown(on: boolean): void {
     this.notesShown = on;
+    if (this.ok) this.placeLabels(this.cam.k);
   }
   /** The cards toggle: off hides the hover card and draws failing Galaxies without the dim/ghost look. */
   setCardsOn(on: boolean): void {
@@ -1769,7 +1774,7 @@ export class Scene implements SceneApi {
       let y = p.y - r - 14 - th;
       const above = y >= 8;
       if (!above) y = p.y + r + 14;
-      this.tipBox = { x, y, w: tw, h: th, gapTop: above ? y + th : p.y + r, gapBottom: above ? p.y - r : y };
+      this.tipBox = { x, y, w: tw, h: th, gapTop: above ? y + th : p.y - r, gapBottom: above ? p.y + r : y };
       el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     }
     if (!this.hit.hidden) {
