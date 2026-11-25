@@ -190,6 +190,8 @@ export class Scene implements SceneApi {
   /* Error and empty states (spec section 9): per repo look, card and quiet line. */
   private notes = new Map<string, GalaxyNote>();
   private noteEls = new Map<string, { fade: number; card: HTMLDivElement | null; quiet: HTMLDivElement | null }>();
+  /** The cards toggle: off hides every note (card and quiet line) for a clean map. Hidden until the App says so. */
+  private notesShown = false;
   private readonly o: SceneOptions;
 
   constructor(o: SceneOptions) {
@@ -1589,6 +1591,10 @@ export class Scene implements SceneApi {
     this.notes = new Map(notes);
     if (this.ok) { this.syncNotes(); this.layout(); }
   }
+  /** Show or hide every note card and quiet line. The Galaxy look (ghost, dim) stays. */
+  setNotesShown(on: boolean): void {
+    this.notesShown = on;
+  }
   private syncNotes() {
     for (const [repo, e] of this.noteEls) {
       if (this.galaxies.has(repo)) continue;
@@ -1659,7 +1665,7 @@ export class Scene implements SceneApi {
         const x = clamp(c.x - w / 2, 8, Math.max(8, W - w - 8));
         const y = onG ? c.y - h / 2 : below;
         const box = { x0: x, x1: x + w, y0: y, y1: y + h };
-        const show = onScreen && near && y >= 8 && y + h <= H - 8 && !hits(box);
+        const show = this.notesShown && onScreen && near && y >= 8 && y + h <= H - 8 && !hits(box);
         el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
         el.classList.toggle("off", !show);
         el.style.opacity = show ? a : "";

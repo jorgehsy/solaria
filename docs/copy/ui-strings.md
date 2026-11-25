@@ -84,6 +84,8 @@ Voice: space words for events and objects, short and playful, with the GitHub wo
 | `tool.search` | Search (key /) | aria-label and title. Artifact L284 |
 | `tool.tourOn` | Auto tour: on (key P) | Artifact L2538 |
 | `tool.tourOff` | Auto tour: off (key P) | Artifact L2538 |
+| `tool.cardsOn` | Cards: shown (key C) | Cards toggle: Galaxy note cards and quiet lines shown. On first load they wait 4 s. Remembered in localStorage. |
+| `tool.cardsOff` | Cards: hidden (key C) | Cards toggle: every Galaxy note card and quiet line hidden, for a clean map. |
 | `tool.demo` | Demo mode (key D) | Artifact L286 |
 | `tool.recenter` | Recenter (key 0) | Artifact L287 |
 | `tool.fullscreenEnter` | Full screen (key F) | Artifact L2630 |

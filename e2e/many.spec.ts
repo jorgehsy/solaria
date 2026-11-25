@@ -92,7 +92,8 @@ test("Focus is recomputed from each snapshot", async ({ page }) => {
 test("Galaxy notes never stack: visible notes stay on screen and never overlap", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(HZ)).toHaveCount(27);
-  await page.waitForTimeout(2500);
+  // Cards wait 4 s on first load.
+  await page.waitForTimeout(5000);
   const notes = await page.locator(".lab-note, .lab-quiet").evaluateAll((els) =>
     els.map((e) => {
       const r = e.getBoundingClientRect();

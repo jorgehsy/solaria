@@ -89,3 +89,26 @@ test("rejected token: no Galaxies, one centred card with the .env line", async (
   await expect(card).toContainText("GITHUB_TOKEN=github_pat_xxxxxxxx");
   await expect(page.locator(".lab-gal")).toHaveCount(0);
 });
+
+test("cards toggle: cards wait 4 s on first load, hide on click and stay hidden after reload", async ({ page }) => {
+  await page.goto("/");
+  const card = note(page, "errs/lib");
+  await expect(card).toContainText("No access");
+  await expect(card).toBeHidden();
+  await expect(card).toBeVisible({ timeout: 8000 });
+
+  const toggle = page.getByRole("button", { name: /^Cards:/ });
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".lab-note:visible, .lab-quiet:visible")).toHaveCount(0);
+
+  await page.reload();
+  await expect(note(page, "errs/lib")).toContainText("No access");
+  await page.waitForTimeout(5000);
+  await expect(page.getByRole("button", { name: /^Cards:/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".lab-note:visible, .lab-quiet:visible")).toHaveCount(0);
+
+  await page.keyboard.press("c");
+  await expect(note(page, "errs/lib")).toBeVisible();
+});
