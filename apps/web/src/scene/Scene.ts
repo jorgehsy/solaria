@@ -148,7 +148,7 @@ export class Scene implements SceneApi {
   private autoFit = true;
   private fitDirty = true;
   private galaxies = new Map<string, Galaxy>();
-  /** World box the default fit frames when there is a Horizon. */
+  /** World box the default fit frames when there is a Horizon (Focus only: the Horizon may be off screen). */
   private frame: Layout["frame"] = null;
   /** Most zoom allowed: Horizon Galaxies are small, so flying into one needs more. */
   private kMax = 4;
@@ -262,8 +262,6 @@ export class Scene implements SceneApi {
     app.renderer.on("resize", (w: number, h: number) => {
       this.W = w;
       this.H = h;
-      // Horizon geometry depends on the window size.
-      if (this.vm.repos.length) this.layout();
       this.fitDirty = true;
       if (this.autoFit) {
         const f = this.fitTarget();
@@ -376,7 +374,7 @@ export class Scene implements SceneApi {
       repo, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, R: 120, Rt: 120, spin: h * TAU, count: 0, tier: "focus", scale: 1,
       halo, core, rot, stars, puffs, gas: { base: null, baseA: 0, blobs: new Map() }, cloud: null, foreign: null, label,
     };
-    // A Horizon Galaxy's label flies the camera to it; it never swaps it into Focus.
+    // A Horizon Galaxy's label flies the camera to it (it may be off screen); it never swaps it into Focus.
     label.addEventListener("click", (e) => {
       if (G.tier !== "horizon" || e.ctrlKey || e.metaKey || e.shiftKey) return;
       e.preventDefault();
@@ -598,7 +596,7 @@ export class Scene implements SceneApi {
         planets: (bySun.get(s) ?? []).map((n) => ({ key: n.key, number: n.data.number, blockers: n.data.blockers, done: n.data.state === "done" })),
       });
     }
-    const L = layoutUniverse(input, { reducedMotion: this.still(), viewport: { w: this.W || 1440, h: this.H || 900 } });
+    const L = layoutUniverse(input, { reducedMotion: this.still() });
     this.frame = L.frame;
     for (const s of this.suns.values()) {
       const p = L.suns.get(s.key);
@@ -637,15 +635,12 @@ export class Scene implements SceneApi {
     this.zoom?.scaleExtent([0.06, this.kMax]);
     this.fitDirty = true;
   }
-  /** Focus: full `owner/repo` and the open count. Horizon: repo name only (CSS truncates), full name on hover. */
+  /** Every Galaxy, Focus or Horizon, shows the full `owner/repo` and the open count. */
   private galaxyLabel(G: Galaxy) {
-    const hz = G.tier === "horizon";
-    const name = hz ? G.repo.slice(G.repo.indexOf("/") + 1) : G.repo;
     const sub = this.notes.get(G.repo)?.look === "ghost" ? S.galaxy.noData : G.count ? S.galaxy.open(G.count) : S.galaxy.nothingOpen;
-    const html = hz ? esc(name) : `${esc(name)}<span>${esc(sub)}</span>`;
+    const html = `${esc(G.repo)}<span>${esc(sub)}</span>`;
     if (G.label.innerHTML !== html) G.label.innerHTML = html;
-    G.label.classList.toggle("lab-hz", hz);
-    if (hz) G.label.title = G.repo; else G.label.removeAttribute("title");
+    G.label.dataset.tier = G.tier;
   }
   /**
    * How much of a Galaxy's inside shows at zoom k: 1 in Focus. A Horizon Galaxy is a distant
@@ -699,7 +694,8 @@ export class Scene implements SceneApi {
     const { x: padX, top, bottom } = FIT_INSETS;
     if (this.frame) {
       const f = this.frame;
-      const k = Math.min((W - padX * 2) / (f.x1 - f.x0), (H - top - bottom) / (f.y1 - f.y0));
+      // Never past real size: the Horizon packed around Focus peeks in at the edges, so the user knows to pan.
+      const k = clamp(Math.min((W - padX * 2) / (f.x1 - f.x0), (H - top - bottom) / (f.y1 - f.y0)), 0.08, 1);
       return { k, x: W / 2 - ((f.x0 + f.x1) / 2) * k, y: top + (H - top - bottom) / 2 - ((f.y0 + f.y1) / 2) * k };
     }
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -1532,9 +1528,10 @@ export class Scene implements SceneApi {
       const r = el.getBoundingClientRect();
       boxes.push({ x0: r.left - ur.left - 4, x1: r.right - ur.left + 4, y0: r.top - ur.top - 4, y1: r.bottom - ur.top + 4 });
     }
-    const nChrome = boxes.length;
     const hits = (b: Box, list: Box[]) => list.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
-    for (const G of this.galaxies.values()) {
+    // Focus labels first, so they win a clash; zoomed far out, a Horizon label that would cover another hides.
+    const gOrder = [...this.galaxies.values()].sort((a, b) => (a.tier === "horizon" ? 1 : 0) - (b.tier === "horizon" ? 1 : 0));
+    for (const G of gOrder) {
       const p = this.toScreen(G.x, G.y - G.R * 0.98);
       const lw = G.label.offsetWidth || 120;
       const x = clamp(p.x - lw / 2, 8, W - lw - 8), y = Math.max(8, p.y - 30);
@@ -1542,7 +1539,7 @@ export class Scene implements SceneApi {
       const gb = { x0: x, x1: x + lw, y0: y, y1: y + 26 };
       // A Galaxy off screen keeps its label off screen too (no labels pinned to the edge).
       const away = p.x < 0 || p.x > W || p.y < -G.R * k * 2 || p.y > this.H;
-      const under = away || hits(gb, boxes.slice(0, nChrome));
+      const under = away || hits(gb, boxes);
       G.label.style.opacity = under ? "0" : String(Math.min(1, this.introA * 1.4) * (!hl || hl.gals.has(G) ? 1 : 1 - 0.65 * hlA));
       if (!under) boxes.push(gb);
     }
@@ -1637,7 +1634,7 @@ export class Scene implements SceneApi {
   /**
    * Ghost cards sit on their Galaxy; the rest, and the quiet line, sit just under it.
    * A note shows only where it can be read without covering anything: its Galaxy is on screen
-   * (no pinning to the edge), a Horizon Galaxy has been flown close (vis) unless it failed, and it hits no chrome,
+   * (no pinning to the edge) and it hits no chrome,
    * label or earlier note. Focus notes are placed first, so they win a clash.
    */
   private placeNotes(boxes: { x0: number; x1: number; y0: number; y1: number }[], k: number) {
@@ -1658,8 +1655,7 @@ export class Scene implements SceneApi {
       for (const el of [e.card, e.quiet]) {
         if (!el) continue;
         const w = el.offsetWidth || 200, h = el.offsetHeight || 40;
-        // A Horizon Galaxy is too small to hold a card: its ghost card goes under it too.
-        const onG = el === e.card && ghost && G.tier !== "horizon";
+        const onG = el === e.card && ghost;
         const x = clamp(c.x - w / 2, 8, Math.max(8, W - w - 8));
         const y = onG ? c.y - h / 2 : below;
         const box = { x0: x, x1: x + w, y0: y, y1: y + h };

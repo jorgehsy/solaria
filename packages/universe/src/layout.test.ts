@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIT_INSETS, HORIZON_LABEL, focusLabelPx, HORIZON_PX, galaxyOrder, layoutUniverse } from "./layout.ts";
+import { HORIZON_GAP, LABEL_H, focusLabelPx, footprint, galaxyOrder, layoutUniverse } from "./layout.ts";
 import type { LayoutInput } from "./layout.ts";
 
 const input = (): LayoutInput => ({
@@ -92,10 +92,8 @@ function many(n: number): LayoutInput & { openCount: Record<string, number> } {
 }
 
 describe("Focus and Horizon", () => {
-  const VP = { w: 1440, h: 900 };
-
   it("keeps every Galaxy in Focus with fewer than 4 repos", () => {
-    const l = layoutUniverse(many(3), { reducedMotion: false, viewport: VP });
+    const l = layoutUniverse(many(3), { reducedMotion: false });
     expect(l.focus).toHaveLength(3);
     expect(l.horizon).toEqual([]);
     expect(l.frame).toBeNull();
@@ -103,14 +101,14 @@ describe("Focus and Horizon", () => {
   });
 
   it("centres a single repo", () => {
-    const l = layoutUniverse(many(1), { reducedMotion: false, viewport: VP });
+    const l = layoutUniverse(many(1), { reducedMotion: false });
     expect(l.galaxies.get(l.focus[0]!)?.x).toBe(0);
   });
 
   for (const n of [4, 10, 30]) {
-    it(`puts the 3 busiest of ${n} repos in Focus and the rest on the Horizon without overlaps`, () => {
+    it(`puts the 3 busiest of ${n} repos in Focus and the rest on the Horizon, all at full size, without overlaps`, () => {
       const inp = many(n);
-      const l = layoutUniverse(inp, { reducedMotion: false, viewport: VP });
+      const l = layoutUniverse(inp, { reducedMotion: false });
       const busiest = inp.repos
         .map((r, i) => ({ r, i, c: inp.openCount[r] ?? 0 }))
         .sort((a, b) => b.c - a.c || a.i - b.i)
@@ -119,71 +117,61 @@ describe("Focus and Horizon", () => {
       expect(new Set(l.focus)).toEqual(new Set(busiest));
       expect(l.horizon).toHaveLength(n - 3);
       expect(new Set([...l.focus, ...l.horizon])).toEqual(new Set(inp.repos));
-      for (const r of l.horizon) expect(l.galaxies.get(r)).toMatchObject({ tier: "horizon" });
+      for (const r of l.horizon) expect(l.galaxies.get(r)).toMatchObject({ tier: "horizon", scale: 1 });
 
-      // Screen space at the default fit: frame maps to the fit area of a 1440x900 window.
-      const f = l.frame!;
-      const k = (VP.w - FIT_INSETS.x * 2) / (f.x1 - f.x0);
-      expect((VP.h - FIT_INSETS.top - FIT_INSETS.bottom) / (f.y1 - f.y0)).toBeCloseTo(k, 6);
-      const sx = (x: number) => VP.w / 2 + x * k;
-      const sy = (y: number) => FIT_INSETS.top + (VP.h - FIT_INSETS.top - FIT_INSETS.bottom) / 2 + y * k;
+      // Same size as when the repo is alone: nothing is shrunk.
+      for (const r of inp.repos) {
+        const solo = layoutUniverse({ ...inp, repos: [r] }, { reducedMotion: false });
+        expect(l.galaxies.get(r)?.R).toBeCloseTo(solo.galaxies.get(r)!.R, 6);
+      }
+      for (const s of l.suns.values()) expect(s.r).toBeGreaterThanOrEqual(13 - 1e-9);
+
+      // Discs and labels never overlap, in world px.
       type Box = { x0: number; x1: number; y0: number; y1: number; id: string };
-      const boxes: Box[] = [];
-      for (const g of l.galaxies.values()) {
-        const x = sx(g.x), y = sy(g.y), r = g.R * k;
-        // Disc plus its label above it (Horizon labels are capped at HORIZON_LABEL.w).
-        const lw = g.tier === "horizon" ? HORIZON_LABEL.w : focusLabelPx(g.repo);
-        boxes.push({ id: g.repo, x0: Math.min(x - r, x - lw / 2), x1: Math.max(x + r, x + lw / 2), y0: y - r - (g.tier === "horizon" ? HORIZON_LABEL.h : 32), y1: y + r });
-        if (g.tier === "horizon") {
-          const d = g.R * 2 * k;
-          expect(d).toBeLessThanOrEqual(HORIZON_PX + 0.01);
-          expect(d).toBeGreaterThanOrEqual(HORIZON_PX * 0.6 - 0.01);
-        }
-      }
-      for (const b of boxes) {
-        expect(b.x0).toBeGreaterThanOrEqual(0);
-        expect(b.x1).toBeLessThanOrEqual(VP.w);
-        expect(b.y0).toBeGreaterThanOrEqual(FIT_INSETS.top - 30);
-        expect(b.y1).toBeLessThanOrEqual(VP.h - FIT_INSETS.bottom + 30);
-      }
+      const boxes: Box[] = [...l.galaxies.values()].map((g) => {
+        const lw = focusLabelPx(g.repo) / 2;
+        return { id: g.repo, x0: g.x - Math.max(g.R, lw), x1: g.x + Math.max(g.R, lw), y0: g.y - g.R - LABEL_H, y1: g.y + g.R };
+      });
       for (let i = 0; i < boxes.length; i++)
         for (let j = i + 1; j < boxes.length; j++) {
           const a = boxes[i]!, b = boxes[j]!;
           const hit = a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
           expect(hit, `${a.id} overlaps ${b.id}`).toBe(false);
         }
+
+      // The default fit frames exactly Focus; Horizon Galaxies sit outside it.
+      const f = l.frame!;
+      for (const r of l.focus) {
+        const g = l.galaxies.get(r)!;
+        expect(g.x - g.R).toBeGreaterThanOrEqual(f.x0 - 1e-6);
+        expect(g.x + g.R).toBeLessThanOrEqual(f.x1 + 1e-6);
+      }
     });
   }
 
-  it("orders the Horizon by config, nothing-open last, starting at 12 o'clock clockwise", () => {
+  it("packs the Horizon around Focus, nearest first, in config order with nothing-open last", () => {
     const inp = many(10);
-    const l = layoutUniverse(inp, { reducedMotion: false, viewport: VP });
+    const l = layoutUniverse(inp, { reducedMotion: false });
     const rest = inp.repos.filter((r) => !l.focus.includes(r));
     const want = [...rest.filter((r) => inp.openCount[r]), ...rest.filter((r) => !inp.openCount[r])];
     expect(l.horizon).toEqual(want);
-    const first = l.galaxies.get(l.horizon[0]!)!;
-    const second = l.galaxies.get(l.horizon[1]!)!;
-    expect(Math.abs(first.x)).toBeLessThan(1e-6);
-    expect(first.y).toBeLessThan(0);
-    expect(second.x).toBeGreaterThan(0);
-  });
-
-  it("shrinks a Horizon Galaxy's contents with it", () => {
-    const inp = many(10);
-    const full = layoutUniverse(inp, { reducedMotion: false, viewport: VP });
-    const repo = full.horizon.find((r) => r.endsWith("-0") || r.endsWith("-9"))!;
-    const g = full.galaxies.get(repo)!;
-    expect(g.scale).toBeLessThan(1);
-    const sun = full.suns.get(`${repo}#1`);
-    if (sun) expect(sun.R).toBeLessThanOrEqual(g.R + 1e-6);
+    // Each Horizon Galaxy touches (within the gap) some Galaxy placed before it: no stray islands.
+    const placed = l.focus.map((r) => footprint(l.galaxies.get(r)!));
+    for (const r of l.horizon) {
+      const fp = footprint(l.galaxies.get(r)!);
+      const near = Math.min(...placed.map((p) => Math.hypot(p.x - fp.x, p.y - fp.y) - p.r - fp.r));
+      expect(near).toBeGreaterThanOrEqual(HORIZON_GAP - 1e-3);
+      expect(near).toBeLessThanOrEqual(HORIZON_GAP + 1e-3);
+      placed.push(fp);
+    }
   });
 
   it("recomputes Focus from the counts it is given", () => {
     const inp = many(10);
-    const a = layoutUniverse(inp, { reducedMotion: false, viewport: VP });
+    const a = layoutUniverse(inp, { reducedMotion: false });
     const quiet = a.horizon[0]!;
     inp.openCount[quiet] = 99;
-    const b = layoutUniverse(inp, { reducedMotion: false, viewport: VP });
+    const b = layoutUniverse(inp, { reducedMotion: false });
     expect(b.focus).toContain(quiet);
     expect(b.galaxies.get(quiet)).toMatchObject({ tier: "focus", scale: 1 });
   });

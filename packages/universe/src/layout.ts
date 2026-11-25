@@ -48,18 +48,12 @@ export interface LayoutInput {
 }
 export interface LayoutOptions {
   reducedMotion: boolean;
-  /** Screen size in CSS px. Horizon geometry is sized for it; defaults to 1440x900. */
-  viewport?: { w: number; h: number };
 }
 
 /** Space the camera fit keeps clear of the header (top) and the log and tools (bottom), in px. */
 export const FIT_INSETS = { x: 40, top: 104, bottom: 110 } as const;
 /** Most Galaxies in Focus. */
 export const FOCUS_MAX = 3;
-/** On-screen diameter of the biggest Horizon Galaxy, in px. */
-export const HORIZON_PX = 30;
-/** Room one Horizon label takes: max width and height (it sits above its Galaxy), in px. */
-export const HORIZON_LABEL = { w: 112, h: 26 } as const;
 
 export interface Disc {
   x: number;
@@ -69,7 +63,7 @@ export interface Disc {
 export interface GalaxyPlace {
   repo: string;
   tier: "focus" | "horizon";
-  /** Content scale: 1 in Focus, smaller on the Horizon (everything inside is shrunk by it). */
+  /** Content scale. Always 1: every Galaxy is drawn at its real size. */
   scale: number;
   /** Centre in world units. */
   x: number;
@@ -106,9 +100,9 @@ export interface Layout {
   loose: Map<IssueKey, { dx: number; dy: number }>;
   /** Focus repos, left to right. */
   focus: string[];
-  /** Horizon repos, in ring order (12 o'clock, clockwise, outer ring first). */
+  /** Horizon repos, in placement order (nearest Focus first). */
   horizon: string[];
-  /** World box the default camera fit should frame exactly (null: fit the Galaxies). */
+  /** World box the default camera fit frames: Focus when there is a Horizon (null: fit every Galaxy). */
   frame: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
@@ -117,7 +111,8 @@ const GALAXY_GAP = 70;
 /**
  * Where everything goes. Pure: the same input always gives the same picture.
  * Planets sit on rings by blocking depth; Suns, the Gas cloud and the foreign cluster are packed
- * as circles inside their Galaxy; Galaxies sit side by side with the busiest in the middle.
+ * as circles inside their Galaxy; Focus Galaxies sit side by side with the busiest in the middle,
+ * and the Horizon is packed around them at full size.
  */
 export function layoutUniverse(input: LayoutInput, opts: LayoutOptions): Layout {
   const out: Layout = { galaxies: new Map(), suns: new Map(), planets: new Map(), loose: new Map(), focus: [], horizon: [], frame: null };
@@ -241,156 +236,90 @@ export function layoutUniverse(input: LayoutInput, opts: LayoutOptions): Layout 
     g.x = (xs[i] ?? 0) - mid;
     g.y = (i % 2 ? 1 : -1) * g.R * 0.12;
   });
+  spreadRow(list);
   out.focus = list.map((g) => g.repo);
   if (!many) return out;
 
-  // Horizon: config order, repos with nothing open at the end.
+  // Horizon: config order, repos with nothing open at the end, each at full size around Focus.
   const rest = input.repos.filter((r) => !inFocus.has(r));
   const horizon = [...rest.filter((r) => (input.openCount[r] ?? 0) > 0), ...rest.filter((r) => !(input.openCount[r] ?? 0))];
-  placeHorizon(out, list, horizon, opts.viewport ?? { w: 1440, h: 900 });
+  placeHorizon(out, list, horizon);
   return out;
 }
 
-interface Ring { ax: number; ay: number; n: number }
-interface Box { x0: number; x1: number; y0: number; y1: number }
-
 /**
- * A generous guess at a Focus label's width in px (`OWNER/REPO` in 11px bold caps plus "N open").
- * Layout runs without a DOM, so it cannot measure; erring wide only costs a slightly smaller Focus.
+ * A generous guess at a Galaxy label's width in px (`OWNER/REPO` in 11px bold caps plus "N open").
+ * Layout runs without a DOM, so it cannot measure; erring wide only costs a little more space.
  */
 export function focusLabelPx(repo: string): number {
   return Math.ceil(repo.length * 9.6 + 80);
 }
 
-/** Evenly spaced points (by arc length) on an ellipse, from 12 o'clock clockwise (screen y points down). */
-export function ellipsePoints(ax: number, ay: number, n: number): { x: number; y: number }[] {
-  if (n <= 0) return [];
-  const S = 720;
-  const xs = new Float64Array(S + 1), ys = new Float64Array(S + 1), cum = new Float64Array(S + 1);
-  for (let i = 0; i <= S; i++) {
-    const t = -Math.PI / 2 + (i / S) * TAU;
-    xs[i] = Math.cos(t) * ax;
-    ys[i] = Math.sin(t) * ay;
-    if (i) cum[i] = (cum[i - 1] ?? 0) + Math.hypot((xs[i] ?? 0) - (xs[i - 1] ?? 0), (ys[i] ?? 0) - (ys[i - 1] ?? 0));
+/** Height a Galaxy label takes above its disc, in world px. */
+export const LABEL_H = 32;
+
+/** Neighbouring Focus labels must not touch: push the row apart where they would, then recentre it. */
+function spreadRow(row: GalaxyPlace[]) {
+  for (let i = 1; i < row.length; i++) {
+    const a = row[i - 1], g = row[i];
+    if (!a || !g) continue;
+    const half = (h: GalaxyPlace) => Math.max(h.R, focusLabelPx(h.repo) / 2);
+    const need = Math.max(a.R + g.R + GALAXY_GAP, half(a) + half(g) + 24);
+    const gap = g.x - a.x;
+    if (gap < need) for (let j = i; j < row.length; j++) { const h = row[j]; if (h) h.x += need - gap; }
   }
-  const P = cum[S] ?? 0;
-  const out: { x: number; y: number }[] = [];
-  let j = 0;
-  for (let k = 0; k < n; k++) {
-    const want = (k / n) * P;
-    while (j < S - 1 && (cum[j + 1] ?? 0) < want) j++;
-    const c0 = cum[j] ?? 0, c1 = cum[j + 1] ?? 0;
-    const u = (want - c0) / (c1 - c0 || 1);
-    const x0 = xs[j] ?? 0, y0 = ys[j] ?? 0;
-    out.push({ x: x0 + ((xs[j + 1] ?? 0) - x0) * u, y: y0 + ((ys[j + 1] ?? 0) - y0) * u });
-  }
-  return out;
+  const first = row[0], last = row[row.length - 1];
+  const c = first && last ? (first.x + last.x) / 2 : 0;
+  for (const g of row) g.x -= c;
 }
 
-/** Room one Horizon Galaxy needs on screen: its label above, its disc below. */
-const SLOT = { w: HORIZON_LABEL.w + 8, h: HORIZON_LABEL.h + HORIZON_PX + 8 };
-const clear = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.abs(a.x - b.x) >= SLOT.w || Math.abs(a.y - b.y) >= SLOT.h;
-
-/** How many Horizon Galaxies fit on one ring without their slots touching. */
-function capacity(ax: number, ay: number): number {
-  let n = 1;
-  for (let m = 2; m < 400; m++) {
-    const p = ellipsePoints(ax, ay, m);
-    if (!p.every((a, i) => clear(a, p[(i + 1) % m] ?? a))) break;
-    n = m;
-  }
-  return n;
+interface Footprint { x: number; y: number; r: number }
+/** A circle around the box of a Galaxy's disc and the label above it, centred on the disc. */
+export function footprint(g: GalaxyPlace): Footprint {
+  return { x: g.x, y: g.y, r: Math.hypot(Math.max(g.R, focusLabelPx(g.repo) / 2), g.R + LABEL_H) };
 }
+/** Clear space between two footprints, in world px. */
+export const HORIZON_GAP = 40;
+/** Candidate angles tried around each placed Galaxy. */
+const ANGLES = 36;
 
 /**
- * Put the Horizon on up to three rings near the screen edges and shrink Focus to fit inside them.
- * Worked in screen px around the centre of the fit area, then divided by the fit scale k, so the
- * default camera shows Horizon Galaxies at about HORIZON_PX.
+ * Every Horizon Galaxy keeps its real size (spec: nothing shrinks). In Horizon order, each goes to the
+ * free spot touching an already placed Galaxy that is nearest the centre, measured on a wide ellipse
+ * so the universe grows sideways like the screen. The result can be far larger than the window:
+ * the default camera frames Focus and the user pans to the rest.
  */
-function placeHorizon(out: Layout, focus: GalaxyPlace[], horizon: string[], vp: { w: number; h: number }) {
-  const aw = Math.max(320, vp.w - FIT_INSETS.x * 2);
-  const ah = Math.max(240, vp.h - FIT_INSETS.top - FIT_INSETS.bottom);
-  // Slot centre = point on the ring; the slot spans label (above) to disc (below).
-  const ax0 = aw / 2 - SLOT.w / 2, ay0 = ah / 2 - SLOT.h / 2;
-  const rings: Ring[] = [];
-  let left = horizon.length;
-  for (let j = 0; j < 3 && left > 0; j++) {
-    const ax = ax0 - j * SLOT.w, ay = ay0 - j * SLOT.h;
-    if (ax < SLOT.w || ay < SLOT.h) break;
-    const n = j === 2 ? left : Math.min(left, capacity(ax, ay));
-    rings.push({ ax, ay, n });
-    left -= n;
-  }
-  const last = rings[rings.length - 1];
-  if (last && left > 0) last.n += left;
-
-  // Focus sits inside the innermost ring with one slot of clearance.
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (const g of focus) { x0 = Math.min(x0, g.x - g.R); x1 = Math.max(x1, g.x + g.R); y0 = Math.min(y0, g.y - g.R - 30); y1 = Math.max(y1, g.y + g.R); }
-  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-  for (const g of focus) { g.x -= cx; g.y -= cy; }
-  const hw = (x1 - x0) / 2, hh = (y1 - y0) / 2;
-  const ia = Math.max(40, (last?.ax ?? ax0) - SLOT.w * 0.75), ib = Math.max(30, (last?.ay ?? ay0) - SLOT.h * 0.75);
-  // Start with the Focus box's corner on an ellipse inside the innermost ring...
-  let k = Math.min(1.6, 1 / Math.hypot(hw / ia, hh / ib));
-  // ...then shrink until no Focus disc or label touches a Horizon slot (labels are wider than small discs).
-  const slots = rings.flatMap((ring) => ellipsePoints(ring.ax, ring.ay, ring.n)).slice(0, horizon.length);
-  const slotBox = (p: { x: number; y: number }) => ({ x0: p.x - SLOT.w / 2, x1: p.x + SLOT.w / 2, y0: p.y - SLOT.h / 2, y1: p.y + SLOT.h / 2 });
-  const focusBox = (g: GalaxyPlace, k: number) => {
-    const x = g.x * k, y = g.y * k, r = g.R * k, lw = focusLabelPx(g.repo) / 2;
-    return { x0: Math.min(x - r, x - lw), x1: Math.max(x + r, x + lw), y0: y - r - 32, y1: y + r };
-  };
-  const touch = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
-  const boxes = slots.map(slotBox);
-  const home = focus.map((g) => g.x);
-  // Neighbouring Focus labels must not touch either: spread the row apart in px when they would.
-  const spread = (k: number) => {
-    focus.forEach((g, i) => (g.x = home[i] ?? g.x));
-    for (let i = 1; i < focus.length; i++) {
-      const a = focus[i - 1], g = focus[i];
-      if (!a || !g) continue;
-      const need = (focusLabelPx(a.repo) + focusLabelPx(g.repo)) / 2 + 12;
-      const gap = (g.x - a.x) * k;
-      if (gap < need) for (let j = i; j < focus.length; j++) { const h = focus[j]; if (h) h.x += (need - gap) / k; }
-    }
-    const first = focus[0], lastF = focus[focus.length - 1];
-    const c = first && lastF ? (first.x + lastF.x) / 2 : 0;
-    for (const g of focus) g.x -= c;
-  };
-  const clash = () => focus.some((g) => boxes.some((b) => touch(focusBox(g, k), b)));
-  spread(k);
-  for (let i = 0; i < 80 && clash(); i++) { k *= 0.95; spread(k); }
-
+function placeHorizon(out: Layout, focus: GalaxyPlace[], horizon: string[]) {
+  const placed: Footprint[] = focus.map(footprint);
   const gals = horizon.map((r) => out.galaxies.get(r)).filter((g): g is GalaxyPlace => !!g);
-  const Rmax = Math.max(1, ...gals.map((g) => g.R));
-  gals.forEach((g, i) => {
-    const p = slots[i];
-    if (!p) return;
-    const f = Math.min(1, Math.max(0.6, Math.sqrt(g.R / Rmax)));
-    const R = ((HORIZON_PX / 2) * f) / k;
-    // The point is the slot centre; the disc sits in the slot's lower part, under its label.
-    const dy = SLOT.h / 2 - HORIZON_PX / 2 - 4;
-    shrink(out, g, R / g.R);
+  for (const g of gals) {
+    const r = footprint({ ...g, x: 0, y: 0 }).r;
+    let best: { x: number; y: number; d: number } | null = null;
+    for (const p of placed) {
+      const dist = p.r + r + HORIZON_GAP;
+      for (let a = 0; a < ANGLES; a++) {
+        const t = (a / ANGLES) * TAU;
+        const x = p.x + Math.cos(t) * dist, y = p.y + Math.sin(t) * dist;
+        const d = Math.hypot(x / 1.6, y);
+        if (best && d >= best.d) continue;
+        if (placed.some((q) => Math.hypot(q.x - x, q.y - y) < q.r + r + HORIZON_GAP - 1e-6)) continue;
+        best = { x, y, d };
+      }
+    }
     g.tier = "horizon";
-    g.x = p.x / k;
-    g.y = (p.y + dy) / k;
-    g.R = R;
-  });
-  out.horizon = gals.map((g) => g.repo);
-  out.frame = { x0: -aw / 2 / k, x1: aw / 2 / k, y0: -ah / 2 / k, y1: ah / 2 / k };
-}
-
-/** Scale everything inside a Galaxy by s (its offsets and sizes; orbit speeds stay). */
-function shrink(out: Layout, g: GalaxyPlace, s: number) {
-  g.scale = s;
-  if (g.gas) g.gas = { x: g.gas.x * s, y: g.gas.y * s, r: g.gas.r * s };
-  if (g.foreign) g.foreign = { x: g.foreign.x * s, y: g.foreign.y * s, r: g.foreign.r * s };
-  for (const sp of out.suns.values()) {
-    if (!sp.key.startsWith(g.repo + "#")) continue;
-    sp.dx *= s; sp.dy *= s; sp.r *= s; sp.R *= s; sp.rings = sp.rings.map((r) => r * s);
+    g.x = best?.x ?? 0;
+    g.y = best?.y ?? 0;
+    placed.push({ x: g.x, y: g.y, r });
   }
-  for (const [key, pl] of out.planets) if (key.startsWith(g.repo + "#")) pl.ring *= s;
-  for (const [key, lo] of out.loose) if (key.startsWith(g.repo + "#")) { lo.dx *= s; lo.dy *= s; }
+  out.horizon = gals.map((g) => g.repo);
+  // The default fit frames Focus with its labels; the Horizon may sit off screen.
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const g of focus) {
+    const lw = focusLabelPx(g.repo) / 2;
+    x0 = Math.min(x0, g.x - Math.max(g.R, lw)); x1 = Math.max(x1, g.x + Math.max(g.R, lw));
+    y0 = Math.min(y0, g.y - g.R - LABEL_H); y1 = Math.max(y1, g.y + g.R);
+  }
+  out.frame = isFinite(x0) ? { x0, y0, x1, y1 } : null;
 }
 
 /** Galaxies in screen order, left to right. */

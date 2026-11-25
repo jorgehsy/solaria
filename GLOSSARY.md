@@ -8,7 +8,7 @@
 
 **Focus**: The up to 3 Galaxies with the most open issues, drawn full size in the centre of the universe. Chosen automatically from every snapshot, never by clicking.
 
-**Horizon**: The ring of small Galaxies near the screen edges: every Galaxy not in Focus, labelled by repo name only.
+**Horizon**: Every Galaxy not in Focus, drawn at its real size and packed around Focus. It may run past the screen edges; the user pans or zooms out to reach it.
 
 **Map**: An open issue whose title starts with `Map: ` or `Mapa: `. Groups other issues (its sub-issues). Drawn as a **Sun**.
 _Avoid_: epic, parent issue.
