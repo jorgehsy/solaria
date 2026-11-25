@@ -220,9 +220,9 @@ A pure function of snapshot + viewport + reduced motion, in `packages/universe`.
 
 - **Focus**: the up to 3 Galaxies with the most open issues, full size, side by side in the centre, busiest in the middle. Ties break by config order. Fewer than 4 repos: every Galaxy is in Focus and there is no Horizon. A single repo is one centred full-size Galaxy.
 - Focus is always automatic and recomputed from every snapshot. When a repo enters or leaves Focus it animates between its two places. Clicking a Horizon Galaxy only flies the camera to it; nothing swaps.
-- **Horizon**: every other Galaxy, shrunk to about 30 px on screen (scaled 0.6 to 1x by the square root of its real size), spaced evenly on an ellipse near the screen edges, starting at 12 o'clock and going clockwise, in config-file order. If a ring is too crowded use a second, then a third inner ring. Repos with nothing open sit at the end.
-- **Labels**: Focus Galaxies show the full `owner/repo` label with the open count. Horizon Galaxies show the repo name only, truncated with an ellipsis; full name on hover. Long labels truncate with "…".
-- **Camera**: default fit frames Focus + Horizon together. Zoom and pan work as in the artifact; `0` recenters.
+- **Horizon**: every other Galaxy, at its real size (nothing shrinks). In config-file order, repos with nothing open at the end, each goes to the free spot touching an already placed Galaxy that is nearest the centre (measured on a wide ellipse, so the universe grows sideways), with its label clear of every other disc and label. With many repos the universe is far larger than the window. Source: Jorge, 2026-11-25.
+- **Labels**: every Galaxy shows the full `owner/repo` label with the open count. A label whose Galaxy is off screen is hidden; zoomed far out, a Horizon label that would cover another label is hidden (Focus labels win).
+- **Camera**: with a Horizon, the default fit frames Focus, never zoomed past real size, so the nearest Horizon Galaxies peek in at the edges. Without one it frames every Galaxy. Pan is unbounded and zoom goes out far enough to see the whole universe; `0` recenters.
 - Owner does not affect placement. Horizon order is config-file order. Source: ticket #16 (handoff).
 
 Source: #13, #6 (items 1, 2), prototype `prototype/layout-many-repos`.
@@ -316,7 +316,7 @@ Order: 1, then 2, then 3 first; 4 to 8 mostly parallel after 3; 9 last. Section 
 | 5 | Several owners | [11](#multi-owner), [2](#install), [5](#reading-rules) (refs) | Repos of two owners with `GITHUB_TOKEN_<OWNER>` render; owner token wins and does not fall back; labels are `owner/repo`, keys `owner/repo#N`; External Planet and plain-text ref appear for unconfigured repos. |
 | 6 | Events + animation + Activity log | [7](#diff-events), [6](#snapshot) (10-min gap), [10](#chrome) (search, keys) | A changed snapshot plays the matching animation (one event per 1.5 s) and adds an Activity row with the right tag; a gap over 10 minutes redraws quietly and logs changes; Playwright checks the log line. |
 | 7 | Error and empty states | [9](#errors), [6](#snapshot) (status, stale) | Each case of the section 9 table can be triggered (fake GitHub returning 401/403/404/rate limit/network error) and shows the in-space card, ghost Galaxy, dimmed stale data or quiet empty line with the deck wording. |
-| 8 | Many repos (Focus + Horizon) | [8](#layout) | With 3, 10 and 30 fixture repos the 3 busiest Galaxies are in Focus and the rest sit on the Horizon ring(s) with truncated labels and no overlaps at 1440x900; Focus recomputes on each snapshot; Vitest covers the layout function. |
+| 8 | Many repos (Focus + Horizon) | [8](#layout) | With 3, 10 and 30 fixture repos the 3 busiest Galaxies are in Focus and on screen at 1440x900, the rest sit on the Horizon at full size with full labels and no overlaps; Focus recomputes on each snapshot; Vitest covers the layout function. |
 | 9 | Finish | [10](#chrome), [4](#github-reading) (throttling), `docs/copy/ui-strings.md` | Orbit-badge wordmark, legend, Auto tour (2 min idle, `P`), all keyboard shortcuts and every copy-deck string are in place; README links `docs/repo-requirements.md`; repo extras (CHANGELOG, SECURITY, etc.) exist. |
 
 Source: #1, #5, #11.
